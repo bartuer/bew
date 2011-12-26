@@ -1,0 +1,37 @@
+
+* bew
+  this name is reversed web, for it will be less boring if use web in abnormal way:
+  - not use client retrieve information, but setup server stream it
+  - not boring waiting user get, push to them actively
+  - not render on server, render on user's device
+  - not use language as same as folks surround you
+    - read pages written in non-native language
+    - read machine language than human language
+  - not GET oriented, but POST oriented
+* feature
+  - accept fs event 
+    - mail
+    - fold
+    - log
+  - accept HTTP upload
+  - publish message to 0mq
+* rewrite several times
+  - ruby
+    - event machine
+    - 0mq ruby binding
+    - rack
+    - thin
+  - js
+    - node.js
+    - 0mq js binding
+  - c
+    - subscriber wrapper
+    - s0cat
+    - mongrel2
+
+
+
+
+
+
+
