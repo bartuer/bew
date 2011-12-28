@@ -882,7 +882,7 @@ ecb_function_ ecb_bool ecb_little_endian (void) { return ecb_byteorder_helper ()
  * alternatively, you can remove this #error and link against libpthread,
  * which will then provide the memory fences.
  */
-# error "memory fences not defined for your architecture, please report"
+
 #endif
 
 #ifndef ECB_MEMORY_FENCE
