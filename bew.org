@@ -44,6 +44,7 @@
     - Apple's scandir + tfind help and watcher sample are pretty cripple
     - (link "~/local/src/node/out/Release/deps/uv/src/unix/eio/demo.c" 4864)
     - eio's readdir is ready?
+      it is not magic, inode, type all wrong, recurive, sort doesn't works
         
     
 

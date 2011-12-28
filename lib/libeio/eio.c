@@ -261,10 +261,10 @@ static void eio_destroy (eio_req *req);
 #endif
 
 #ifndef D_TYPE
-# define D_TYPE(de) 0
+#define D_TYPE(entp) (entp->d_type)
 #endif
 #ifndef D_INO
-# define D_INO(de) 0
+# define D_INO(entp) (entp->d_ino)
 #endif
 #ifndef D_NAMLEN
 # define D_NAMLEN(entp) strlen (D_NAME (entp))
