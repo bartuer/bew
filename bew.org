@@ -15,7 +15,9 @@
     - log
   - accept HTTP upload
   - publish message to 0mq
-* rewrite several times
+* languages choosing
+  do not choose among these meaningless options, should work on eio/ev
+  by c and only on main focus on linux >2.6.24
   - ruby
     - event machine
     - 0mq ruby binding
@@ -28,7 +30,22 @@
     - subscriber wrapper
     - s0cat
     - mongrel2
-
+* DONE fs event prototype [3/3]
+  - [X] em and node.js both failed
+    - can not report who changed
+    - inotify implement can not report change in subdir
+    - only get the notification then quickly check
+  - [X] rsync method
+    - algorithm is useful but it is too slow
+    - rolling checksum
+    - build list time
+  - [X] scandir + stat
+    - {struct timespec st_ctimespec : ino_t           st_ino}
+    - Apple's scandir + tfind help and watcher sample are pretty cripple
+    - (link "~/local/src/node/out/Release/deps/uv/src/unix/eio/demo.c" 4864)
+    - eio's readdir is ready?
+        
+    
 
 
 
