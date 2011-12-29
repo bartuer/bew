@@ -11,8 +11,22 @@
 #include "eio.h"
 #include "ev.h"
 
-char* pwd = NULL;
+int  tsCompare (struct timespec time1, struct timespec time2)
+{
+  if (time1.tv_sec < time2.tv_sec)
+    return -1 ;/* Less than. */
+  else if (time1.tv_sec > time2.tv_sec)
+    return 1 ;/* Greater than. */
+  else if (time1.tv_nsec < time2.tv_nsec)
+    return -1 ;/* Less than. */
+  else if (time1.tv_nsec > time2.tv_nsec)
+    return 1 ;/* Greater than. */
+  else
+    return 0 ;/* Equal. */
+}
 
+char* pwd = NULL;
+struct timespec last_mod;
 /* use heap simulate stack, so readdir can be called recursively */
 char **freelist = NULL;
 size_t freelist_len = 0;
@@ -81,14 +95,23 @@ readdir_cb (eio_req *req)
       struct eio_dirent *ent = ents + i;
       char *name = names + ent->nameofs;
       freelist[freelist_len + i]  = 0;
-      printf ("name[#%d]: %s/%s\n", i, req->data, name);
+
+      snprintf(pwd, MAXPATHLEN, "%s/%s", req->data, name);
+      struct stat st;
+      lstat(pwd, &st);
       if ( ent->type ==  EIO_DT_DIR) {
-        snprintf(pwd, MAXPATHLEN, "%s/%s", req->data, name);
-        freelist[freelist_len + i] = eio_readdir_r(pwd, EIO_READDIR_DENTS|EIO_READDIR_DIRS_FIRST, 0, readdir_cb);
+        if (tsCompare(last_mod, st.st_mtimespec) <=0 ) {
+          freelist[freelist_len + i] = eio_readdir_r(pwd, EIO_READDIR_DENTS, 0, readdir_cb);
+        } else {
+          freelist[freelist_len + i] = 0;
+        }
       }
-   }
+      if (tsCompare(last_mod, st.st_mtimespec) <=0 ) {
+         printf ("name[#%d]: %s/%s\n", i, req->data, name);
+      }
+    }
   freelist_len += req->result;
-   return 0;
+  return 0;
 }
 
 int
@@ -101,9 +124,10 @@ stat_cb (eio_req *req)
   else
     printf ("stat_cb(%s) = %d\n", EIO_PATH (req), EIO_RESULT (req));
 
-  if (!EIO_RESULT (req))
-    printf ("stat size %d mtime 0%o\n", buf->st_size, buf->st_ctimespec);
-
+  if (!EIO_RESULT (req)) {
+    printf ("stat size %d mtime 0%o\n", buf->st_size, buf->st_mtimespec);
+    last_mod = buf->st_mtimespec;
+  }
   return 0;
 }
 
@@ -111,6 +135,7 @@ int
 main (int argc, char**argv)
 {
   char pwd_buf[MAXPATHLEN];
+
   realpath(argv[1], pwd_buf);
   pwd = pwd_buf;
   printf ("pipe ()\n");
@@ -125,8 +150,10 @@ main (int argc, char**argv)
   char* root = NULL;
   do
     {
-      eio_lstat (argv[1], 0, stat_cb, "stat");
-      root = eio_readdir_r (pwd, EIO_READDIR_DENTS|EIO_READDIR_DIRS_FIRST, 0, readdir_cb);
+      struct stat st;
+      lstat (argv[1],&st);
+      last_mod = st.st_mtimespec;
+      root = eio_readdir_r (pwd, EIO_READDIR_DENTS, 0, readdir_cb);
       event_loop ();
     }
   while (0);
@@ -139,9 +166,9 @@ main (int argc, char**argv)
   if ( freelist ) {
     for (i = 0; i < freelist_len; ++i ) {
       if (freelist[i]) {
-         free(freelist[i]);
-     }
-   }
+        free(freelist[i]);
+      }
+    }
     free(freelist);
   }
 
