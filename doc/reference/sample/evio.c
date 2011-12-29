@@ -134,6 +134,8 @@ main (int argc, char**argv)
   int i;
 
   printf("count: %d\n",freelist_len); 
+
+  /* free all allocated path */
   if ( freelist ) {
     for (i = 0; i < freelist_len; ++i ) {
       if (freelist[i]) {
