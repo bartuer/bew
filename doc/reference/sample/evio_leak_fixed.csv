@@ -1,0 +1,7 @@
+Bytes Used,Count,,Symbol Name
+ 844.19 KB      95.4%,5, ,start
+  36.58 KB       4.1%,92, ,_dyld_start
+   4.00 KB       0.4%,1, ,thread_start
+   4.00 KB       0.4%,1, , _pthread_start
+   4.00 KB       0.4%,1, ,  etp_proc
+   4.00 KB       0.4%,1, ,   realloc

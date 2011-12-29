@@ -1,4 +1,5 @@
-doc/reference/sample/Watcher/build
+/doc/reference/sample/Watcher/build
+/doc/reference/sample/evio.dSYM
 /lib/libeio/CVS/Entries
 /lib/libeio/CVS/Repository
 /lib/libeio/CVS/Root

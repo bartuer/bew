@@ -1,0 +1,15 @@
+Bytes Used,Count,,Symbol Name
+   1.57 MB      97.7%,13096, ,start
+   1.57 MB      97.7%,13096, , main
+   1.57 MB      97.7%,13093, ,  event_loop
+   1.57 MB      97.7%,13093, ,   eio_poll
+   1.57 MB      97.7%,13093, ,    eio_finish
+   1.57 MB      97.7%,13093, ,     readdir_cb
+   1.57 MB      97.7%,13090, ,      strdup
+   1.57 MB      97.7%,13090, ,       malloc
+    272 Bytes    0.0%,3, ,      eio_readdir_r
+     48 Bytes    0.0%,1, ,  eio_lstat
+     48 Bytes    0.0%,1, ,  eio_readdir_r
+     16 Bytes    0.0%,1, ,  strdup
+     16 Bytes    0.0%,1, ,   malloc
+  36.58 KB       2.2%,92, ,_dyld_start

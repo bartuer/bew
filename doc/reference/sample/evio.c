@@ -7,15 +7,22 @@
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/param.h>
 #include "eio.h"
 #include "ev.h"
+
+char* pwd = NULL;
+
+/* use heap simulate stack, so readdir can be called recursively */
+char **freelist = NULL;
+size_t freelist_len = 0;
 
 int respipe [2];
 void
 want_poll (void)
 {
   char dummy;
-  printf ("want_poll ()\n");
+  /* printf ("want_poll ()\n"); */
   write (respipe [1], &dummy, 1);
 }
 
@@ -23,7 +30,7 @@ void
 done_poll (void)
 {
   char dummy;
-  printf ("done_poll ()\n");
+  /* printf ("done_poll ()\n"); */
   read (respipe [0], &dummy, 1);
 }
 
@@ -39,9 +46,18 @@ event_loop (void)
   while (eio_nreqs ())
     {
       poll (&pfd, 1, -1);
-      printf ("eio_poll () = %d\n", eio_poll ());
+      eio_poll();
+      /* printf ("eio_poll () = %d\n", eio_poll ()); */
     }
   printf ("leaving event loop\n");
+}
+
+char*
+eio_readdir_r(const char *path, int flags, int pri, eio_cb cb)
+{
+  char *p = strdup(path);
+  eio_readdir(p, flags, pri, cb, p);
+  return p;
 }
 
 int
@@ -54,14 +70,25 @@ readdir_cb (eio_req *req)
   struct eio_dirent *ents = (struct eio_dirent *)req->ptr1;
   char *names = (char *)req->ptr2;
 
+  if ( freelist ) {
+    freelist = realloc(freelist, (req->result + freelist_len) * sizeof(char*));    
+  } else {
+    freelist = calloc(req->result, sizeof(char*));
+  }
+
   for (i = 0; i < req->result; ++i)
     {
       struct eio_dirent *ent = ents + i;
       char *name = names + ent->nameofs;
-      printf ("name[#%d,%d]: %s, type : %d, inode : %d\n", i, ent->namelen, name, ent->type, ent->inode);
+      freelist[freelist_len + i]  = 0;
+      printf ("name[#%d]: %s/%s\n", i, req->data, name);
+      if ( ent->type ==  EIO_DT_DIR) {
+        snprintf(pwd, MAXPATHLEN, "%s/%s", req->data, name);
+        freelist[freelist_len + i] = eio_readdir_r(pwd, EIO_READDIR_DENTS|EIO_READDIR_DIRS_FIRST, 0, readdir_cb);
+      }
    }
-
-  return 0;
+  freelist_len += req->result;
+   return 0;
 }
 
 int
@@ -81,22 +108,40 @@ stat_cb (eio_req *req)
 }
 
 int
-main (void)
+main (int argc, char**argv)
 {
+  char pwd_buf[MAXPATHLEN];
+  realpath(argv[1], pwd_buf);
+  pwd = pwd_buf;
   printf ("pipe ()\n");
   if (pipe (respipe)) abort ();
 
+
   printf ("eio_init ()\n");
   if (eio_init (want_poll, done_poll)) abort ();
+  snprintf(pwd, "%s/%s", pwd, "Watcher");
 
+  /* for free initial path duplication */
+  char* root = NULL;
   do
     {
-      eio_lstat ("Watcher", 0, stat_cb, "stat");
-      eio_readdir ("Watcher", EIO_READDIR_DENTS|EIO_READDIR_DIRS_FIRST, 0, readdir_cb, "readdir");
+      eio_lstat (argv[1], 0, stat_cb, "stat");
+      root = eio_readdir_r (pwd, EIO_READDIR_DENTS|EIO_READDIR_DIRS_FIRST, 0, readdir_cb);
       event_loop ();
     }
   while (0);
+  free(root);
+  int i;
+
+  printf("count: %d\n",freelist_len); 
+  if ( freelist ) {
+    for (i = 0; i < freelist_len; ++i ) {
+      if (freelist[i]) {
+         free(freelist[i]);
+     }
+   }
+    free(freelist);
+  }
 
   return 0;
 }
-
