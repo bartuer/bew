@@ -84,7 +84,7 @@ readdir_cb (eio_req *req)
   if ( ents->type != EIO_DT_DIR ) {
     struct stat leaf_st ;
     lstat(req->data, &leaf_st);
-    if (!later_than(now, leaf_st.st_mtimespec)) {
+    if (!later_than(now, leaf_st.st_ctimespec)) {
       return 0;
     }
   }
@@ -110,7 +110,7 @@ readdir_cb (eio_req *req)
       if ( ent->type ==  EIO_DT_DIR) {
         freelist[freelist_len + i] = eio_readdir_r(pwd, EIO_READDIR_DENTS|EIO_READDIR_DIRS_FIRST, 0, readdir_cb);
       }
-      if (later_than(now, st.st_mtimespec)) {
+      if (later_than(now, st.st_ctimespec)) {
         printf ("name[#%d]: %s/%s\n", i, req->data, name);
       }
     }
