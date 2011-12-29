@@ -82,11 +82,11 @@ readdir_cb (eio_req *req)
   struct eio_dirent *ents = (struct eio_dirent *)req->ptr1;
 
   if ( ents->type != EIO_DT_DIR ) {
-     struct stat leaf_st ;
-     lstat(req->data, &leaf_st);
-     if (!later_than(now, leaf_st.st_mtimespec)) {
-       return 0;
-     }
+    struct stat leaf_st ;
+    lstat(req->data, &leaf_st);
+    if (!later_than(now, leaf_st.st_mtimespec)) {
+      return 0;
+    }
   }
   
   char *names = (char *)req->ptr2;
@@ -111,7 +111,7 @@ readdir_cb (eio_req *req)
         freelist[freelist_len + i] = eio_readdir_r(pwd, EIO_READDIR_DENTS|EIO_READDIR_DIRS_FIRST, 0, readdir_cb);
       }
       if (later_than(now, st.st_mtimespec)) {
-         printf ("name[#%d]: %s/%s\n", i, req->data, name);
+        printf ("name[#%d]: %s/%s\n", i, req->data, name);
       }
     }
   freelist_len += req->result;
@@ -140,40 +140,40 @@ main (int argc, char**argv)
 {
   char pwd_buf[MAXPATHLEN];
 
-  realpath(argv[1], pwd_buf);
-  pwd = pwd_buf;
   printf ("pipe ()\n");
   if (pipe (respipe)) abort ();
 
-
   printf ("eio_init ()\n");
   if (eio_init (want_poll, done_poll)) abort ();
-  snprintf(pwd, "%s/%s", pwd, "Watcher");
+  
 
   /* for free initial path duplication */
   char* root = NULL;
+  int i;
   do
     {
+      realpath(argv[1], pwd_buf);
+      pwd = pwd_buf;
+      freelist = NULL;
+      freelist_len = 0;
+
       time(&now);
-      now = now - 3600;      /* should be now, take one hour before make testing convenient  */
+      now = now - 2;      /* should be now, take one hour before make testing convenient  */
       root = eio_readdir_r (pwd, EIO_READDIR_DENTS|EIO_READDIR_DIRS_FIRST, 0, readdir_cb);
       event_loop ();
+      free(root);
+      printf("count: %d\n", freelist_len); 
+      /* free all allocated path */
+      if ( freelist ) {
+        for (i = 0; i < freelist_len; ++i ) {
+          if (freelist[i]) {
+            free(freelist[i]);
+          }
+        }
+        free(freelist);
+       }
     }
-  while (0);
-  free(root);
-  int i;
-
-  printf("count: %d\n",freelist_len); 
-
-  /* free all allocated path */
-  if ( freelist ) {
-    for (i = 0; i < freelist_len; ++i ) {
-      if (freelist[i]) {
-        free(freelist[i]);
-      }
-    }
-    free(freelist);
-  }
-
+  while (1);
+ 
   return 0;
 }
