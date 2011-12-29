@@ -60,6 +60,10 @@ kqueue_change (EV_P_ int fd, int filter, int flags, int fflags)
 # define NOTE_EOF 0
 #endif
 
+#ifndef EV_LIBUV_KQUEUE_HACK
+#define EV_LIBUV_KQUEUE_HACK  0x40
+#endif /* EV_LIBUV_KQUEUE_HACK = 0x40 */
+
 static void
 kqueue_modify (EV_P_ int fd, int oev, int nev)
 {
@@ -80,6 +84,10 @@ kqueue_modify (EV_P_ int fd, int oev, int nev)
 
   if (nev & EV_WRITE)
     kqueue_change (EV_A_ fd, EVFILT_WRITE, EV_ADD | EV_ENABLE, NOTE_EOF);
+
+  if (nev & EV_LIBUV_KQUEUE_HACK)
+    kqueue_change (EV_A_ fd, EVFILT_VNODE, EV_ADD | EV_ENABLE | EV_ONESHOT,
+      NOTE_ATTRIB | NOTE_WRITE | NOTE_RENAME | NOTE_DELETE | NOTE_EXTEND | NOTE_REVOKE);
 }
 
 static void
@@ -140,6 +148,7 @@ kqueue_poll (EV_P_ ev_tstamp timeout)
           fd,
           kqueue_events [i].filter == EVFILT_READ ? EV_READ
           : kqueue_events [i].filter == EVFILT_WRITE ? EV_WRITE
+          : kqueue_events [i].filter == EVFILT_VNODE ? EV_LIBUV_KQUEUE_HACK
           : 0
         );
     }
