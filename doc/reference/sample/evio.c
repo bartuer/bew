@@ -11,22 +11,20 @@
 #include "eio.h"
 #include "ev.h"
 
-int  tsCompare (struct timespec time1, struct timespec time2)
+int
+later_than(time_t time1, struct timespec time2)
 {
-  if (time1.tv_sec < time2.tv_sec)
-    return -1 ;/* Less than. */
-  else if (time1.tv_sec > time2.tv_sec)
-    return 1 ;/* Greater than. */
-  else if (time1.tv_nsec < time2.tv_nsec)
-    return -1 ;/* Less than. */
-  else if (time1.tv_nsec > time2.tv_nsec)
-    return 1 ;/* Greater than. */
+  if (time1 < time2.tv_sec)
+    return 1 ;
+  else if (time1 > time2.tv_sec)
+    return 0 ;
   else
-    return 0 ;/* Equal. */
+    return 1 ;
 }
 
 char* pwd = NULL;
-struct timespec last_mod;
+time_t now;
+
 /* use heap simulate stack, so readdir can be called recursively */
 char **freelist = NULL;
 size_t freelist_len = 0;
@@ -80,16 +78,26 @@ readdir_cb (eio_req *req)
   if (EIO_RESULT (req) < 0)
     return 0;
 
-  int i;
+  
   struct eio_dirent *ents = (struct eio_dirent *)req->ptr1;
-  char *names = (char *)req->ptr2;
 
+  if ( ents->type != EIO_DT_DIR ) {
+     struct stat leaf_st ;
+     lstat(req->data, &leaf_st);
+     if (!later_than(now, leaf_st.st_mtimespec)) {
+       return 0;
+     }
+  }
+  
+  char *names = (char *)req->ptr2;
+  
   if ( freelist ) {
     freelist = realloc(freelist, (req->result + freelist_len) * sizeof(char*));    
   } else {
     freelist = calloc(req->result, sizeof(char*));
   }
 
+  int i;
   for (i = 0; i < req->result; ++i)
     {
       struct eio_dirent *ent = ents + i;
@@ -100,17 +108,14 @@ readdir_cb (eio_req *req)
       struct stat st;
       lstat(pwd, &st);
       if ( ent->type ==  EIO_DT_DIR) {
-        if (tsCompare(last_mod, st.st_mtimespec) <=0 ) {
-          freelist[freelist_len + i] = eio_readdir_r(pwd, EIO_READDIR_DENTS, 0, readdir_cb);
-        } else {
-          freelist[freelist_len + i] = 0;
-        }
+        freelist[freelist_len + i] = eio_readdir_r(pwd, EIO_READDIR_DENTS|EIO_READDIR_DIRS_FIRST, 0, readdir_cb);
       }
-      if (tsCompare(last_mod, st.st_mtimespec) <=0 ) {
+      if (later_than(now, st.st_mtimespec)) {
          printf ("name[#%d]: %s/%s\n", i, req->data, name);
       }
     }
   freelist_len += req->result;
+
   return 0;
 }
 
@@ -126,7 +131,6 @@ stat_cb (eio_req *req)
 
   if (!EIO_RESULT (req)) {
     printf ("stat size %d mtime 0%o\n", buf->st_size, buf->st_mtimespec);
-    last_mod = buf->st_mtimespec;
   }
   return 0;
 }
@@ -150,10 +154,9 @@ main (int argc, char**argv)
   char* root = NULL;
   do
     {
-      struct stat st;
-      lstat (argv[1],&st);
-      last_mod = st.st_mtimespec;
-      root = eio_readdir_r (pwd, EIO_READDIR_DENTS, 0, readdir_cb);
+      time(&now);
+      now = now - 3600;      /* should be now, take one hour before make testing convenient  */
+      root = eio_readdir_r (pwd, EIO_READDIR_DENTS|EIO_READDIR_DIRS_FIRST, 0, readdir_cb);
       event_loop ();
     }
   while (0);
