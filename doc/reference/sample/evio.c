@@ -8,8 +8,19 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/param.h>
+#include <dirent.h>
+
 #include "eio.h"
 #include "ev.h"
+
+char* pwd = NULL;               /* path concat buffer pointer*/
+time_t now;                     /* current time */
+
+/* use heap simulate stack, so readdir can be called recursively */
+char **freelist = NULL;
+size_t freelist_len = 0;
+
+int respipe [2];
 
 int
 later_than(time_t time1, struct timespec time2)
@@ -20,48 +31,6 @@ later_than(time_t time1, struct timespec time2)
     return 0 ;
   else
     return 1 ;
-}
-
-char* pwd = NULL;
-time_t now;
-
-/* use heap simulate stack, so readdir can be called recursively */
-char **freelist = NULL;
-size_t freelist_len = 0;
-
-int respipe [2];
-void
-want_poll (void)
-{
-  char dummy;
-  /* printf ("want_poll ()\n"); */
-  write (respipe [1], &dummy, 1);
-}
-
-void
-done_poll (void)
-{
-  char dummy;
-  /* printf ("done_poll ()\n"); */
-  read (respipe [0], &dummy, 1);
-}
-
-void
-event_loop (void)
-{
-  // an event loop. yeah.
-  struct pollfd pfd;
-  pfd.fd     = respipe [0];
-  pfd.events = POLLIN;
-
-  printf ("\nentering event loop\n");
-  while (eio_nreqs ())
-    {
-      poll (&pfd, 1, -1);
-      eio_poll();
-      /* printf ("eio_poll () = %d\n", eio_poll ()); */
-    }
-  printf ("leaving event loop\n");
 }
 
 char*
@@ -104,14 +73,14 @@ readdir_cb (eio_req *req)
       char *name = names + ent->nameofs;
       freelist[freelist_len + i]  = 0;
 
-      snprintf(pwd, MAXPATHLEN, "%s/%s", req->data, name);
+      snprintf(pwd, MAXPATHLEN, "%s/%s", (char*)req->data, name);
       struct stat st;
       lstat(pwd, &st);
       if ( ent->type ==  EIO_DT_DIR) {
         freelist[freelist_len + i] = eio_readdir_r(pwd, EIO_READDIR_DENTS|EIO_READDIR_DIRS_FIRST, 0, readdir_cb);
       }
       if (later_than(now, st.st_ctimespec)) {
-        printf ("name[#%d]: %s/%s\n", i, req->data, name);
+        printf ("name[#%d]: %s/%s\n", i, (char*)req->data, name);
       }
     }
   freelist_len += req->result;
@@ -119,37 +88,74 @@ readdir_cb (eio_req *req)
   return 0;
 }
 
-int
-stat_cb (eio_req *req)
+ev_timer timeout_watcher;
+static ev_idle repeat_watcher;
+static ev_async ready_watcher;
+static ev_io dir_watcher;
+static struct ev_loop *loop;
+
+static void
+timeout_cb (EV_P_ ev_timer *w, int revents)
 {
-  struct stat *buf = EIO_STAT_BUF (req);
+  printf("timeout\n");
+  ev_break (EV_A_ EVBREAK_ONE);
+}
 
-  if (req->type == EIO_FSTAT)
-    printf ("fstat_cb = %d\n", EIO_RESULT (req));
-  else
-    printf ("stat_cb(%s) = %d\n", EIO_PATH (req), EIO_RESULT (req));
+static void
+repeat (EV_P_ ev_idle *w, int revents)
+{
+  if (eio_poll () != -1)
+    ev_idle_stop (EV_A_ w);
+}
 
-  if (!EIO_RESULT (req)) {
-    printf ("stat size %d mtime 0%o\n", buf->st_size, buf->st_mtimespec);
-  }
-  return 0;
+static void
+ready (EV_P_ ev_async *w, int revents)
+{
+  if (eio_poll () == -1)
+    ev_idle_start (EV_A_ &repeat_watcher);
+}
+
+static void
+want_poll (void)
+{
+  ev_async_send (loop, &ready_watcher);
+}
+
+static void
+dir_cb (EV_P_ ev_io *w, int revents)
+{
+  printf("w->fd: %d\n",w->fd);
 }
 
 int
 main (int argc, char**argv)
 {
   char pwd_buf[MAXPATHLEN];
-
-  printf ("pipe ()\n");
-  if (pipe (respipe)) abort ();
-
-  printf ("eio_init ()\n");
-  if (eio_init (want_poll, done_poll)) abort ();
+  realpath(argv[1], pwd_buf);
+  pwd = pwd_buf;
+  printf("pwd: %s\n",pwd);
+  int dfd = dirfd(opendir(pwd));
+  printf("dfd: %d\n",dfd);
+  struct stat dfd_st;
+  fstat(dfd, &dfd_st);
+  printf("dfd_st.st_ino: %d\n",dfd_st.st_ino);
+  printf("dfd_st.st_ctimespec.t_sec: %d\n",dfd_st.st_ctimespec.tv_sec);
+  loop = EV_DEFAULT;
+  ev_timer_init (&timeout_watcher, timeout_cb, 5, 0.);
+  ev_timer_start (loop, &timeout_watcher);
+  ev_io_init (&dir_watcher, dir_cb, dfd, EV_LIBUV_KQUEUE_HACK|EV__IOFDSET|EV_WRITE);
+  ev_io_start (loop, &dir_watcher);
   
+  ev_idle_init (&repeat_watcher, repeat);
+  ev_async_init (&ready_watcher, ready);
+  ev_async_start (loop, &ready_watcher);
 
+  if (eio_init (want_poll, 0)) abort ();
+  
   /* for free initial path duplication */
   char* root = NULL;
   int i;
+  
   do
     {
       realpath(argv[1], pwd_buf);
@@ -158,11 +164,12 @@ main (int argc, char**argv)
       freelist_len = 0;
 
       time(&now);
-      now = now - 2;      /* should be now, take one hour before make testing convenient  */
+      now = now - 2 * 3600;      /* should be now, take 2 second before make testing convenient  */
       root = eio_readdir_r (pwd, EIO_READDIR_DENTS|EIO_READDIR_DIRS_FIRST, 0, readdir_cb);
-      event_loop ();
+ 
       free(root);
-      printf("count: %d\n", freelist_len); 
+      printf("count: %d\n", (int)freelist_len); 
+ 
       /* free all allocated path */
       if ( freelist ) {
         for (i = 0; i < freelist_len; ++i ) {
@@ -173,7 +180,8 @@ main (int argc, char**argv)
         free(freelist);
        }
     }
-  while (1);
- 
+  while (0);
+
+  ev_run (loop, 0);
   return 0;
 }
