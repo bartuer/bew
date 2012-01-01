@@ -60,10 +60,6 @@ kqueue_change (EV_P_ int fd, int filter, int flags, int fflags)
 # define NOTE_EOF 0
 #endif
 
-#ifndef EV_LIBUV_KQUEUE_HACK
-#define EV_LIBUV_KQUEUE_HACK  0x40
-#endif /* EV_LIBUV_KQUEUE_HACK = 0x40 */
-
 static void
 kqueue_modify (EV_P_ int fd, int oev, int nev)
 {
@@ -110,13 +106,6 @@ kqueue_poll (EV_P_ ev_tstamp timeout)
   EV_ACQUIRE_CB;
   kqueue_changecnt = 0;
 
-  if (expect_false (res < 0))
-    {
-      if (errno != EINTR)
-        ev_syserr ("(libev) kevent");
-
-      return;
-    }
 
   for (i = 0; i < res; ++i)
     {

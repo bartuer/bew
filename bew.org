@@ -17,7 +17,7 @@
   - publish message to 0mq
 * languages choosing
   do not choose among these meaningless options, should work on eio/ev
-  by c and only on main focus on linux >2.6.24
+  by c and mainly focus on linux >2.6.24
   - ruby
     - event machine
     - 0mq ruby binding
