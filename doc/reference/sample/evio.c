@@ -15,10 +15,12 @@
 
 char* pwd = NULL;               /* path concat buffer pointer*/
 time_t now;                     /* current time */
-
+DIR* dp = NULL;
+char* root = NULL;
 /* use heap simulate stack, so readdir can be called recursively */
 char **freelist = NULL;
 size_t freelist_len = 0;
+
 
 int respipe [2];
 
@@ -33,12 +35,12 @@ later_than(time_t time1, struct timespec time2)
     return 1 ;
 }
 
-char*
-eio_readdir_r(const char *path, int flags, int pri, eio_cb cb)
+void
+eio_readdir_r(const char *path, int flags, int pri, eio_cb cb, char* p)
 {
-  char *p = strdup(path);
+  p = strdup(path);
   eio_readdir(p, flags, pri, cb, p);
-  return p;
+  return;
 }
 
 int
@@ -46,15 +48,14 @@ readdir_cb (eio_req *req)
 {
   if (EIO_RESULT (req) < 0)
     return 0;
-
   
   struct eio_dirent *ents = (struct eio_dirent *)req->ptr1;
-
+  
   if ( ents->type != EIO_DT_DIR ) {
     struct stat leaf_st ;
     lstat(req->data, &leaf_st);
     if (!later_than(now, leaf_st.st_ctimespec)) {
-      return 0;
+       return 0;
     }
   }
   
@@ -65,7 +66,7 @@ readdir_cb (eio_req *req)
   } else {
     freelist = calloc(req->result, sizeof(char*));
   }
-
+  
   int i;
   for (i = 0; i < req->result; ++i)
     {
@@ -77,11 +78,13 @@ readdir_cb (eio_req *req)
       struct stat st;
       lstat(pwd, &st);
       if ( ent->type ==  EIO_DT_DIR) {
-        freelist[freelist_len + i] = eio_readdir_r(pwd, EIO_READDIR_DENTS|EIO_READDIR_DIRS_FIRST, 0, readdir_cb);
+        eio_readdir_r(pwd, EIO_READDIR_DENTS|EIO_READDIR_DIRS_FIRST, 0, readdir_cb, freelist[freelist_len + i]);
       }
+      
       if (later_than(now, st.st_ctimespec)) {
-        printf ("name[#%d]: %s/%s\n", i, (char*)req->data, name);
+         printf ("name[#%d]: %s/%s\n", i, (char*)req->data, name);
       }
+  
     }
   freelist_len += req->result;
 
@@ -126,35 +129,6 @@ want_poll (void)
 void
 original_cb_dump (const char* path)
 {
-  char pwd_buf[MAXPATHLEN];
-  /* for free initial path duplication */
-  char* root = NULL;
-  int i;
-  do
-    {
-      realpath(path, pwd_buf);
-      pwd = pwd_buf;
-      freelist = NULL;
-      freelist_len = 0;
-
-      time(&now);
-      now = now - 2 * 3600;      /* should be now, take 2 second before make testing convenient  */
-      root = eio_readdir_r (pwd, EIO_READDIR_DENTS|EIO_READDIR_DIRS_FIRST, 0, readdir_cb);
- 
-      free(root);
-      printf("count: %d\n", (int)freelist_len); 
- 
-      /* free all allocated path */
-      if ( freelist ) {
-        for (i = 0; i < freelist_len; ++i ) {
-          if (freelist[i]) {
-            free(freelist[i]);
-          }
-        }
-        free(freelist);
-      }
-    }
-  while (0);
 }
 
 typedef struct {
@@ -185,9 +159,18 @@ cmd_cb (struct ev_loop *loop, ev_io *w, int revents)
 static void
 dir_cb (EV_P_ ev_io *w, int revents)
 {
-  
   assert(revents == EV_LIBUV_KQUEUE_HACK);
   printf("dir_cb revents: %d\n",revents);
+  printf("w->fd: %d\n",w->fd);
+  char pwd_buf[MAXPATHLEN];
+  realpath(pwd, pwd_buf);
+  pwd = pwd_buf;
+  freelist = NULL;
+  freelist_len = 0;
+
+  time(&now);
+  now = now - 2 * 3600;      /* should be now, take 2 second before make testing convenient  */
+  eio_readdir_r (pwd, EIO_READDIR_DENTS|EIO_READDIR_DIRS_FIRST, 0, readdir_cb, root);
 }
 
 int
@@ -201,7 +184,7 @@ main (int argc, char**argv)
   char * argvp = NULL;
   argvp = realpath(argv[1], pwd_buf);
   pwd = pwd_buf;
-  DIR* dp = opendir(pwd);
+  dp = opendir(pwd);
   if ( errno ) {
     printf("%s, %s is not valid directory\n", strerror(errno), pwd);
     exit(1);
@@ -209,11 +192,6 @@ main (int argc, char**argv)
 
   int dfd = dirfd(dp);
   loop = ev_loop_new (EVBACKEND_KQUEUE);
-
-
-   
-
-
   
   ev_timer_init (&timeout_watcher, timeout_cb, 5, 0.);
   ev_timer_start (loop, &timeout_watcher);
@@ -235,6 +213,23 @@ main (int argc, char**argv)
   
   ev_run (loop, 0);
 
-  
+  if ( root ) {
+    free(root);
+  }
+  printf("count: %d\n", (int)freelist_len);
+  /* free all allocated path */
+  int i;
+  if ( freelist ) {
+    for (i = 0; i < freelist_len; ++i ) {
+      if (freelist[i]) {
+        free(freelist[i]);
+      }
+    }
+    free(freelist);
+  }
+  if ( dp ) {
+    closedir(dp);
+  }
+
   return 0;
 }
