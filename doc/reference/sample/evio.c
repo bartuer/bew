@@ -186,7 +186,7 @@ main (int argc, char**argv)
   int dfd = dirfd(dp);
   loop = ev_loop_new (EVBACKEND_KQUEUE);
   
-  ev_timer_init (&timeout_watcher, timeout_cb, 30, 0.);
+  ev_timer_init (&timeout_watcher, timeout_cb, 2, 0.);
   ev_timer_start (loop, &timeout_watcher);
   
   ev_io_init (&dir_watcher, dir_cb, dfd, EV_LIBUV_KQUEUE_HACK);

@@ -2,7 +2,9 @@ LIBPATH=../../../lib
 LIBEV=$(LIBPATH)/libev/.libs/libev.a
 LIBEVPATH=$(LIBPATH)/libev
 test:evio /tmp/evio
-	echo "echo 'there' > `mktemp /tmp/evio/test.XXXXXX` || exit 1" |./evio /tmp/evio
+	mkdir -p /tmp/evio/fail
+	echo "/tmp/evio/XX" |./evio /tmp/evio
+	echo "/tmp/evio/fail/XX" |./evio /tmp/evio
 
 evio:evio.c $(LIBEV)
 	gcc -g -I$(LIBPATH)/libeio -I$(LIBPATH)/libev -o evio evio.c $(LIBPATH)/libeio/.libs/libeio.a  $(LIBPATH)/libev/.libs/libev.a
