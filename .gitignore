@@ -53,3 +53,4 @@
 /lib/libev/missing
 /lib/libev/stamp-h1
 /doc/reference/sample/evio
+/doc/reference/sample/Watcher/some.txt
