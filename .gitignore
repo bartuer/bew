@@ -55,3 +55,11 @@
 /doc/reference/sample/evio
 /doc/reference/sample/Watcher/some.txt
 /lib/TAGS
+/doc/reference/sample/dir.dSYM/Contents/Info.plist
+/doc/reference/sample/dir.dSYM/Contents/Resources/DWARF/dir
+/doc/reference/sample/dir
+/doc/reference/sample/pub
+/doc/reference/sample/pub.o
+/doc/reference/sample/sub
+/doc/reference/sample/sub.o
+/doc/reference/sample/dir_flymake.plist
