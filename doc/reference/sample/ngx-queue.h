@@ -99,4 +99,9 @@ struct ngx_queue_s {
     (type *) ((unsigned char *) q - offsetof(type, link))
 
 
+#define ngx_queue_foreach(h, v)                                               \
+  for((v) = ngx_queue_head(h);                                                \
+     (v) && (v) != h;                                                         \
+     (v) = ngx_queue_next(v))                                                    
+
 #endif /* _NGX_QUEUE_H_INCLUDED_ */

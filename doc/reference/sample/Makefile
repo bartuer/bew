@@ -44,12 +44,17 @@ pub:pub.o
 pub.o:pub.c
 	$(CC) -c -O3 -I. -I$(ZMQBASE)/include pub.c -o pub.o
 
-dir_memcheck:dir
-	valgrind --leak-check=yes ./dir /tmp/a /tmp/a/b
 
-dir_test:dir
-	mkdir -p /tmp/a/b/c
-	./dir /tmp/a /tmp/a/b
+dir_memcheck:dir test_dir
+	valgrind --leak-check=yes ./dir /tmp/a
+
+dir_test:dir test_dir
+	./dir /tmp/a
+
+test_dir:
+	rm -rf /tmp/a
+	mkdir -p /tmp/a/{b,e,f}/{c,g}/{d,h,'汉 语'}
+	touch /tmp/a/b/{i,j,k}
 
 dir:dir.c
 	$(CC) -g -I. -I$(LIBPATH)/libeio -I$(LIBPATH)/libev -o dir dir.c $(LIBPATH)/libeio/.libs/libeio.a  $(LIBPATH)/libev/.libs/libev.a
