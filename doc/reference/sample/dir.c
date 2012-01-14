@@ -38,9 +38,7 @@ empty_dir_node ( dir_node* node ) {
   int dir_ent = node->dir_ent == NULL;
   int dir_ptr = node->dir_ptr == NULL;
   int parent = node->parent == NULL;
-  int next = node->next == NULL;
-  int prev = node->prev == NULL;
-  return (dir_ent && dir_ptr && parent && next && prev);
+  return (dir_ent && dir_ptr && parent );
 }
 
 dir_node*
@@ -133,20 +131,39 @@ create_dir_node (struct dirent* entry,
 }
 
 void dump_dir_node(dir_node* node) {
-  size_t path_len = strlen(node->path.name);
-  size_t name_len = strlen(node->dir_ent->d_name);
-  printf("\nnode->path.name[%lu]: %s\n", path_len, node->path.name);
-  printf("node->dir_ent->d_name[%lu]: %s\n", name_len, node->dir_ent->d_name);
-  printf("node->dir_ptr->dd_fd: %d\n",dirfd(node->dir_ptr));
+  if ( empty_dir_node(node) ) {
+    printf(" cleaned node; \n");
+  } else {
+    size_t path_len = strlen(node->path.name);
+    size_t name_len = strlen(node->dir_ent->d_name);
+    printf("\nnode->path.name[%lu]: %s\n", path_len, node->path.name);
+    printf("node.->d_name[%lu]: %s\n", name_len, node->dir_ent->d_name);
+    printf("node.->dd_fd: %d\n",dirfd(node->dir_ptr));
+  }
 }
 
 void clean_dir_node(dir_node* node) {
-  assert(node);
+  if ( node == NULL ) {
+    return;
+  }
+  
   if ( node->dir_ptr ) {
     closedir(node->dir_ptr);
     node->dir_ptr = NULL;
   }
-  memset(node, 0, sizeof(*node));
+
+  if ( node->dir_ent ) {
+    node->dir_ent = NULL;
+  }
+
+  if ( node->path.allocated ) {
+    free(node->path.name);
+  }
+
+  if ( node->parent ) {
+    node->parent = NULL;
+  }
+  assert(empty_dir_node(node));
 }
 
 unsigned int
@@ -182,6 +199,29 @@ add_root_node ( char* path, dir_node* slot, dir_node* queue ) {
   return add_nodes(root, slot, queue);
 }
 
+unsigned int
+remove_nodes ( dir_node* root, dir_node* queue ) {
+  unsigned int sum = 0;
+  dir_node* parent = root->parent;
+  dir_node* p;
+  if ( parent == NULL ) {       /* topest */
+    ngx_queue_foreach(queue, p) {
+      dir_node* r = p;
+      ngx_queue_remove(r);
+      clean_dir_node(r);
+      sum++;
+    }
+  } else {                      /* decent of topest */
+    for ( p = root;
+          p == root || (p->parent != NULL && p->parent != parent);
+          p = ngx_queue_next(p), sum++ ) {
+      ngx_queue_remove(p);
+      clean_dir_node(p);
+      } 
+  }
+  return sum;
+}
+
 int
 main (int argc, char**argv) {
   if ( !argv[1] ) {
@@ -201,13 +241,50 @@ main (int argc, char**argv) {
 
   /* add nodes */
   char* path = argv[1];
-  int node_total = add_root_node(path, dir_cluster, q);
-  printf("node_total: %d\n",node_total + 1);
+  add_root_node(path, dir_cluster, q);
 
+  /* inspect */
   dir_node* p;
+  int count = 0;
   ngx_queue_foreach(q, p){
     dump_dir_node(p);
+    count ++;
   }
+  printf("count: %d\n",count);
+
+  dir_node* the_root = ngx_queue_head(q);
+  assert(the_root);
+  dir_node* first = ngx_queue_next(the_root);
+  remove_nodes(first, q);
+
+  printf("\nINSPECT AFTER FIRST CHILD REMOVE\n\n");
+  count = 0;
+  ngx_queue_foreach(q, p){
+    dump_dir_node(p);
+    count++;
+  }
+  printf("count: %d\n",count);
+
+  first = ngx_queue_next(the_root);
+  remove_nodes(first, q);
+  printf("\nINSPECT AFTER LATEST FIRST CHILD REMOVE\n\n");
+  count = 0;
+  ngx_queue_foreach(q, p){
+    dump_dir_node(p);
+    count++;
+  }
+  printf("count: %d\n",count);
+
+  
+  remove_nodes(the_root, q);
+  printf("\nINSPECT AFTER ALL REMOVE\n\n");
+  count = 0;
+  ngx_queue_foreach(q, p){
+    dump_dir_node(p);
+    count++;
+  }
+  printf("count: %d\n",count);
+
   ngx_queue_foreach(q, p){
     clean_dir_node(p);
   }
