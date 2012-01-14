@@ -38,7 +38,7 @@ create_root_dir_node (char* path, dir_node* node) {
   assert(dirp);
   struct dirent* current = readdir(dirp);
   assert(current);
-  assert(!strcmp(current->d_name, "."));
+  assert(!strcmp(current->d_name, "."));                 /* bypass . */
   assert(current->d_type == DT_DIR);
   struct dirent* father = readdir(dirp);                /* bypass .. */
   assert(father);
@@ -52,13 +52,11 @@ create_root_dir_node (char* path, dir_node* node) {
   node->prev = NULL;
 
   char* d_name = current->d_name;
-  char* root_path = realpath(path, d_name);
-  /* try to use dirent allocation */
-  if ( strlen(root_path) > MAXPATHLEN - 3  ) {
+  char* root_path = realpath(path, d_name + 2);
+  if ( strlen(root_path) > MAXPATHLEN - 3  ) {           
     node->path.name = strdup(root_path);
     node->path.allocated = 1;
-  } else {
-    strcpy(d_name + 2, root_path);    
+  } else {                                               /* use dirent allocation */
     node->path.name = d_name + 2;
     node->path.allocated = 0;
   }
