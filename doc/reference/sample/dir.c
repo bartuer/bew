@@ -90,6 +90,8 @@ create_dir_node (struct dirent* entry,
   assert(entry->d_type == DT_DIR);
   node.dir_ent = entry;
   node.parent = parent;
+  node.prev = NULL;
+  node.next = NULL;
   assert(node.parent->dir_ent);
 
   /* use allocated dirent save path name when possible */
@@ -135,13 +137,36 @@ void dump_dir_node(dir_node* node) {
   size_t name_len = strlen(node->dir_ent->d_name);
   printf("\nnode->path.name[%lu]: %s\n", path_len, node->path.name);
   printf("node->dir_ent->d_name[%lu]: %s\n", name_len, node->dir_ent->d_name);
+  printf("node->dir_ptr->dd_fd: %d\n",dirfd(node->dir_ptr));
 }
 
-dir_node*
-add_nodes (dir_node* root, dir_node* slot) {
-  struct dirent* ent = readdir(root->dir_ptr);
-  assert(ent);
-  return root;
+void clean_dir_node(dir_node* node) {
+  assert(node);
+  if ( node->dir_ptr ) {
+    closedir(node->dir_ptr);
+    node->dir_ptr = NULL;
+  }
+  memset(node, 0, sizeof(*node));
+}
+
+unsigned int
+add_nodes (dir_node* root, dir_node* slot, dir_node* queue) {
+  struct dirent* ent;
+  unsigned int sum = 0;
+  while ( (ent = readdir(root->dir_ptr)) ) {
+    assert(ent);
+    if ( ent->d_type == DT_DIR ) {
+       dir_node* node;
+       node = create_dir_node(ent, root, slot);
+       assert(node);
+       int fd = dirfd(node->dir_ptr);
+       ngx_queue_insert_tail(queue, &slot[fd]);
+       assert(ngx_queue_last(queue));
+       sum++;
+       sum += add_nodes(node, slot, queue);
+    }
+  }
+  return sum;
 }
 
 int
@@ -166,21 +191,17 @@ main (int argc, char**argv) {
   assert(!ngx_queue_empty(q));
 
   /* node */
-  struct dirent* ent2 = readdir(root->dir_ptr);
+  int node_total = add_nodes(root, dir_cluster, q);
+  printf("node_total: %d\n",node_total + 1);
 
-  dir_node* last_node;
-  last_node = create_dir_node(ent2, root, dir_cluster);
-  assert(last_node);
-  int last_fd = dirfd(last_node->dir_ptr);
-  ngx_queue_insert_tail(q, &dir_cluster[last_fd]);
-  assert(ngx_queue_last(q));
-  
-  dump_dir_node(root);
-  dump_dir_node(ngx_queue_head(q));
-  dump_dir_node(ngx_queue_last(q));
-  
+  dir_node* p;
+  ngx_queue_foreach(q, p){
+    dump_dir_node(p);
+  }
+  ngx_queue_foreach(q, p){
+    clean_dir_node(p);
+  }
+
   printf("sizeof(dir_cluster): %lu\n",sizeof(dir_cluster));
-
-  /* clean opened dir and free allocated name memeory*/
   return 0;
 }
