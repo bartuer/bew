@@ -60,6 +60,7 @@ create_root_dir_node (char* path, dir_node* slot) {
   node.dir_ent = current;
   node.dir_ptr = dirp;
   node.parent = NULL;
+  /* add to queue maybe change these 2 pointer */
   node.next = NULL;
   node.prev = NULL;
 
@@ -82,15 +83,13 @@ create_root_dir_node (char* path, dir_node* slot) {
 
 dir_node*
 create_dir_node (struct dirent* entry,
-                 dir_node* parent, dir_node* prev,
+                 dir_node* parent, 
                  dir_node* slot
                  ) {
   dir_node node;
   assert(entry->d_type == DT_DIR);
   node.dir_ent = entry;
   node.parent = parent;
-  node.prev = prev;
-  node.next = NULL;
   assert(node.parent->dir_ent);
 
   /* use allocated dirent save path name when possible */
@@ -128,7 +127,6 @@ create_dir_node (struct dirent* entry,
   assert(fd < MAXFDNUM);
   assert(empty_dir_node(slot + fd));
   memcpy((dir_node*)(slot + fd), &node, sizeof(node));
-  prev->next = slot + fd;
   return slot + fd;
 }
 
@@ -171,9 +169,8 @@ main (int argc, char**argv) {
   struct dirent* ent2 = readdir(root->dir_ptr);
 
   dir_node* last_node;
-  last_node = create_dir_node(ent2, 
-                  root, root, 
-                  dir_cluster);
+  last_node = create_dir_node(ent2, root, dir_cluster);
+  assert(last_node);
   int last_fd = dirfd(last_node->dir_ptr);
   ngx_queue_insert_tail(q, &dir_cluster[last_fd]);
   assert(ngx_queue_last(q));
@@ -183,5 +180,7 @@ main (int argc, char**argv) {
   dump_dir_node(ngx_queue_last(q));
   
   printf("sizeof(dir_cluster): %lu\n",sizeof(dir_cluster));
+
+  /* clean opened dir and free allocated name memeory*/
   return 0;
 }
