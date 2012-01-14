@@ -32,7 +32,7 @@ struct dir_node_s {
 
 static dir_node dir_cluster[1024];
 
-DIR*
+dir_node*
 create_root_dir_node (char* path, dir_node* node) {
   DIR* dirp = opendir(path);
   assert(dirp);
@@ -60,14 +60,15 @@ create_root_dir_node (char* path, dir_node* node) {
     node->path.name = d_name + 2;
     node->path.allocated = 0;
   }
-  return dirp;
+  return node;
 }
 
-DIR*
+dir_node*
 create_dir_node (struct dirent* entry,
                  dir_node* parent, dir_node* next, dir_node* prev,
                  dir_node* node) {
-  
+
+  assert(entry->d_type == DT_DIR);
   node->dir_ent = entry;
   node->parent = parent;
   node->next = next;
@@ -105,7 +106,7 @@ create_dir_node (struct dirent* entry,
   assert(father->d_type == DT_DIR);
   node->dir_ptr = dirp;
   
-  return dirp;
+  return node;
 }
 
 void dump_dir_node(dir_node* node) {
@@ -129,22 +130,21 @@ main (int argc, char**argv) {
   /* root */
   char* path = argv[1];
   dir_node* slot = (dir_node*)(dir_cluster);
-  DIR* dp = create_root_dir_node(path, slot);
-  assert(dp);
+  assert(create_root_dir_node(path, slot));
   ngx_queue_insert_head(q, slot);
   dir_node* root = ngx_queue_head(q);
   assert(!ngx_queue_empty(q));
 
   /* node */
-  struct dirent* ent2 = readdir(dp);
-  assert(ent2);
-  dir_node* slot2 = (dir_node*)(dir_cluster + 1);
-  DIR* dp2 = create_dir_node(ent2, 
-                             root, root, root,
-                             slot2);
-  assert(dp2);
-  ngx_queue_insert_tail(q, slot2);
+  struct dirent* ent2 = readdir(root->dir_ptr);
 
+  dir_node* slot2 = (dir_node*)(dir_cluster + 1);
+  create_dir_node(ent2, 
+                  root, root, root,
+                  slot2);
+  ngx_queue_insert_tail(q, slot2);
+  assert(ngx_queue_last(q));
+  
   dump_dir_node(root);
   dump_dir_node(ngx_queue_head(q));
   dump_dir_node(ngx_queue_last(q));
