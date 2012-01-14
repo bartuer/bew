@@ -28,6 +28,7 @@ struct dir_node_s {
   dir_node*      parent;
   dir_node*      next;
   dir_node*      prev;
+  long           loc;
 };
 
 #define MAXFDNUM 1024
@@ -54,7 +55,8 @@ create_root_dir_node (char* path, dir_node* slot) {
   assert(father);
   assert(!strcmp(father->d_name, ".."));
   assert(father->d_type == DT_DIR);
-
+  node.loc = telldir(dirp);
+  
   node.dir_ent = current;
   node.dir_ptr = dirp;
   node.parent = NULL;
@@ -64,13 +66,8 @@ create_root_dir_node (char* path, dir_node* slot) {
 
   char* d_name = current->d_name;
   char* root_path = realpath(path, d_name + 2);
-  if ( strlen(root_path) > MAXPATHLEN - 3  ) {           
-    node.path.name = strdup(root_path);
-    node.path.allocated = 1;
-  } else {                                               /* use dirent allocation */
-    node.path.name = d_name + 2;
-    node.path.allocated = 0;
-  }
+  node.path.name = strdup(root_path);
+  node.path.allocated = 1;
 
   int fd = dirfd(dirp);
   assert(fd < MAXFDNUM);
@@ -99,19 +96,17 @@ create_dir_node (struct dirent* entry,
   namelen = strlen(d_name);
   p_namelen = strlen(p_name);
   char* full_path = NULL;
-  if ( 2 * namelen + p_namelen + 3  <= MAXPATHLEN ) {
-    full_path = d_name + namelen + 1;
-    node.path.allocated = 0;
-  } else {
-    full_path = malloc(namelen + p_namelen + 2);
-    assert(full_path);
-    node.path.allocated = 1;
-  }
+  full_path = malloc(namelen + p_namelen + 2);
+  assert(full_path);
+  node.path.allocated = 1;
   sprintf(full_path, "%s/%s", p_name, d_name);
   full_path[p_namelen + namelen + 1] = 0;
   node.path.name = full_path;
 
   DIR* dirp = opendir(node.path.name);
+  if ( dirp == NULL ) {
+    printf("node.path.name: %s\n",node.path.name);
+  }
   assert(dirp);
   struct dirent* current = readdir(dirp);
   assert(current);
@@ -122,7 +117,8 @@ create_dir_node (struct dirent* entry,
   assert(!strcmp(father->d_name, ".."));
   assert(father->d_type == DT_DIR);
   node.dir_ptr = dirp;
-
+  node.loc = telldir(dirp);
+  
   int fd = dirfd(dirp);
   assert(fd < MAXFDNUM);
   assert(empty_dir_node(slot + fd));
@@ -222,6 +218,15 @@ remove_nodes ( dir_node* root, dir_node* queue ) {
   return sum;
 }
 
+void
+dir_node_rewind ( dir_node* node ) {
+  assert(!empty_dir_node(node));
+  DIR* dirp = node->dir_ptr;
+  assert(dirp);
+  assert(node->loc != 0);
+  seekdir(dirp, node->loc);
+}
+
 int
 main (int argc, char**argv) {
   if ( !argv[1] ) {
@@ -276,6 +281,26 @@ main (int argc, char**argv) {
   printf("count: %d\n",count);
 
   
+  DIR* root_dirp = the_root->dir_ptr;
+  dir_node_rewind(the_root);
+  struct dirent* new_ent = readdir(root_dirp);
+  assert(new_ent);
+  dir_node* new_node;
+  new_node = create_dir_node(new_ent, the_root, dir_cluster);
+  assert(new_node);
+  DIR* new_dirp = new_node->dir_ptr;
+  int new_fd = dirfd(new_dirp);
+  ngx_queue_insert_tail(q, &dir_cluster[new_fd]);
+  add_nodes(new_node, dir_cluster, q);
+
+  printf("\nINSPECT AFTER NEW TREE APPEND TO ROOT\n\n");
+  count = 0;
+  ngx_queue_foreach(q, p){
+    dump_dir_node(p);
+    count++;
+  }
+  printf("count: %d\n",count);
+
   remove_nodes(the_root, q);
   printf("\nINSPECT AFTER ALL REMOVE\n\n");
   count = 0;
