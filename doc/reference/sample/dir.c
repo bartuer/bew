@@ -169,8 +169,27 @@ add_nodes (dir_node* root, dir_node* slot, dir_node* queue) {
   return sum;
 }
 
+unsigned int
+add_root_node ( char* path, dir_node* slot, dir_node* queue ) {
+  unsigned int sum = 0;
+  dir_node* root_node;
+  root_node = create_root_dir_node(path, dir_cluster);
+  assert(root_node);
+  int root_fd = dirfd(root_node->dir_ptr);
+  ngx_queue_insert_head(queue, &dir_cluster[root_fd]);
+  dir_node* root = ngx_queue_head(queue);
+  assert(!ngx_queue_empty(queue));
+  return add_nodes(root, slot, queue);
+}
+
 int
 main (int argc, char**argv) {
+  if ( !argv[1] ) {
+    printf("need dir parameter\n");
+    exit(1);
+  }
+
+  /* prepare slots */
   memset(dir_cluster, 0, sizeof(dir_cluster));
 
   /* queue */
@@ -180,18 +199,9 @@ main (int argc, char**argv) {
   ngx_queue_init(q);
   assert(ngx_queue_empty(q));
 
-  /* root */
+  /* add nodes */
   char* path = argv[1];
-  dir_node* root_node;
-  root_node = create_root_dir_node(path, dir_cluster);
-  assert(root_node);
-  int root_fd = dirfd(root_node->dir_ptr);
-  ngx_queue_insert_head(q, &dir_cluster[root_fd]);
-  dir_node* root = ngx_queue_head(q);
-  assert(!ngx_queue_empty(q));
-
-  /* node */
-  int node_total = add_nodes(root, dir_cluster, q);
+  int node_total = add_root_node(path, dir_cluster, q);
   printf("node_total: %d\n",node_total + 1);
 
   dir_node* p;
