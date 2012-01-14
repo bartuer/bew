@@ -103,6 +103,8 @@ create_dir_node (struct dirent* entry,
   assert(parent);
   assert(!strcmp(father->d_name, ".."));
   assert(father->d_type == DT_DIR);
+  node->dir_ptr = dirp;
+  
   return dirp;
 }
 
