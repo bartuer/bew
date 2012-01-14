@@ -227,6 +227,18 @@ dir_node_rewind ( dir_node* node ) {
   seekdir(dirp, node->loc);
 }
 
+void
+dump_queue ( dir_node* q , char* head_line ) {
+  printf("\n%s\n", head_line);
+  int count = 0;
+  dir_node* p;
+  ngx_queue_foreach(q, p){
+    dump_dir_node(p);
+    count++;
+  }
+  printf("count: %d\n",count);
+}
+
 int
 main (int argc, char**argv) {
   if ( !argv[1] ) {
@@ -260,26 +272,13 @@ main (int argc, char**argv) {
   dir_node* the_root = ngx_queue_head(q);
   assert(the_root);
   dir_node* first = ngx_queue_next(the_root);
-  remove_nodes(first, q);
 
-  printf("\nINSPECT AFTER FIRST CHILD REMOVE\n\n");
-  count = 0;
-  ngx_queue_foreach(q, p){
-    dump_dir_node(p);
-    count++;
-  }
-  printf("count: %d\n",count);
+  remove_nodes(first, q);
+  dump_queue(q, "\nINSPECT AFTER FIRST CHILD REMOVE\n\n");
 
   first = ngx_queue_next(the_root);
   remove_nodes(first, q);
-  printf("\nINSPECT AFTER LATEST FIRST CHILD REMOVE\n\n");
-  count = 0;
-  ngx_queue_foreach(q, p){
-    dump_dir_node(p);
-    count++;
-  }
-  printf("count: %d\n",count);
-
+  dump_queue(q, "\nINSPECT AFTER LATEST FIRST CHILD REMOVE\n\n");
   
   DIR* root_dirp = the_root->dir_ptr;
   dir_node_rewind(the_root);
@@ -292,23 +291,12 @@ main (int argc, char**argv) {
   int new_fd = dirfd(new_dirp);
   ngx_queue_insert_tail(q, &dir_cluster[new_fd]);
   add_nodes(new_node, dir_cluster, q);
+  dump_queue(q, "\nINSPECT AFTER NEW TREE APPEND TO ROOT\n\n");
 
-  printf("\nINSPECT AFTER NEW TREE APPEND TO ROOT\n\n");
-  count = 0;
-  ngx_queue_foreach(q, p){
-    dump_dir_node(p);
-    count++;
-  }
-  printf("count: %d\n",count);
+  /* insert tree need split queue, append to one, then add up */
 
   remove_nodes(the_root, q);
-  printf("\nINSPECT AFTER ALL REMOVE\n\n");
-  count = 0;
-  ngx_queue_foreach(q, p){
-    dump_dir_node(p);
-    count++;
-  }
-  printf("count: %d\n",count);
+  dump_queue(q, "\nINSPECT AFTER ALL REMOVE\n\n");
 
   ngx_queue_foreach(q, p){
     clean_dir_node(p);
