@@ -14,17 +14,12 @@
 #include "ev.h"
 #include "ngx-queue.h"
 
-typedef struct {
-  char*  name;
-  int    allocated;
-} path_buf;
-
 typedef struct dir_node_s dir_node;
 
 struct dir_node_s {
   struct dirent* dir_ent;
   DIR*           dir_ptr;
-  path_buf       path;
+  char*          path;
   dir_node*      parent;
   dir_node*      next;
   dir_node*      prev;
@@ -66,8 +61,7 @@ create_root_dir_node (char* path, dir_node* slot) {
 
   char* d_name = current->d_name;
   char* root_path = realpath(path, d_name + 2);
-  node.path.name = strdup(root_path);
-  node.path.allocated = 1;
+  node.path = strdup(root_path);
 
   int fd = dirfd(dirp);
   assert(fd < MAXFDNUM);
@@ -89,23 +83,21 @@ create_dir_node (struct dirent* entry,
   node.next = NULL;
   assert(node.parent->dir_ent);
 
-  /* use allocated dirent save path name when possible */
   unsigned int namelen, p_namelen;
   char * d_name = node.dir_ent->d_name;
-  char * p_name = node.parent->path.name;
+  char * p_name = node.parent->path;
   namelen = strlen(d_name);
   p_namelen = strlen(p_name);
   char* full_path = NULL;
   full_path = malloc(namelen + p_namelen + 2);
   assert(full_path);
-  node.path.allocated = 1;
   sprintf(full_path, "%s/%s", p_name, d_name);
   full_path[p_namelen + namelen + 1] = 0;
-  node.path.name = full_path;
+  node.path = full_path;
 
-  DIR* dirp = opendir(node.path.name);
+  DIR* dirp = opendir(node.path);
   if ( dirp == NULL ) {
-    printf("node.path.name: %s\n",node.path.name);
+    printf("node.path: %s\n",node.path);
   }
   assert(dirp);
   struct dirent* current = readdir(dirp);
@@ -130,9 +122,9 @@ void dump_dir_node(dir_node* node) {
   if ( empty_dir_node(node) ) {
     printf(" cleaned node; \n");
   } else {
-    size_t path_len = strlen(node->path.name);
+    size_t path_len = strlen(node->path);
     size_t name_len = strlen(node->dir_ent->d_name);
-    printf("\nnode->path.name[%lu]: %s\n", path_len, node->path.name);
+    printf("\nnode->path[%lu]: %s\n", path_len, node->path);
     printf("node.->d_name[%lu]: %s\n", name_len, node->dir_ent->d_name);
     printf("node.->dd_fd: %d\n",dirfd(node->dir_ptr));
   }
@@ -152,9 +144,7 @@ void clean_dir_node(dir_node* node) {
     node->dir_ent = NULL;
   }
 
-  if ( node->path.allocated ) {
-    free(node->path.name);
-  }
+  free(node->path);
 
   if ( node->parent ) {
     node->parent = NULL;
@@ -227,7 +217,7 @@ dir_node_rewind ( dir_node* node ) {
   seekdir(dirp, node->loc);
 }
 
-void
+int
 dump_queue ( dir_node* q , char* head_line ) {
   printf("\n%s\n", head_line);
   int count = 0;
@@ -237,6 +227,7 @@ dump_queue ( dir_node* q , char* head_line ) {
     count++;
   }
   printf("count: %d\n",count);
+  return count;
 }
 
 int
@@ -268,17 +259,20 @@ main (int argc, char**argv) {
     count ++;
   }
   printf("count: %d\n",count);
-
+  assert(count == 28);
+  
   dir_node* the_root = ngx_queue_head(q);
   assert(the_root);
   dir_node* first = ngx_queue_next(the_root);
 
   remove_nodes(first, q);
-  dump_queue(q, "\nINSPECT AFTER FIRST CHILD REMOVE\n\n");
-
+  count = dump_queue(q, "\nINSPECT AFTER FIRST CHILD REMOVE\n\n");
+  assert(count == 19);
+  
   first = ngx_queue_next(the_root);
   remove_nodes(first, q);
-  dump_queue(q, "\nINSPECT AFTER LATEST FIRST CHILD REMOVE\n\n");
+  count = dump_queue(q, "\nINSPECT AFTER LATEST FIRST CHILD REMOVE\n\n");
+  assert(count == 10);
   
   DIR* root_dirp = the_root->dir_ptr;
   dir_node_rewind(the_root);
@@ -291,13 +285,15 @@ main (int argc, char**argv) {
   int new_fd = dirfd(new_dirp);
   ngx_queue_insert_tail(q, &dir_cluster[new_fd]);
   add_nodes(new_node, dir_cluster, q);
-  dump_queue(q, "\nINSPECT AFTER NEW TREE APPEND TO ROOT\n\n");
+  count = dump_queue(q, "\nINSPECT AFTER NEW TREE APPEND TO ROOT\n\n");
+  assert(count == 19);
 
   /* insert tree need split queue, append to one, then add up */
 
   remove_nodes(the_root, q);
-  dump_queue(q, "\nINSPECT AFTER ALL REMOVE\n\n");
-
+  count = dump_queue(q, "\nINSPECT AFTER ALL REMOVE\n\n");
+  assert(count == 0);
+  
   ngx_queue_foreach(q, p){
     clean_dir_node(p);
   }
