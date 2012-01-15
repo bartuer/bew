@@ -152,6 +152,7 @@ void clean_dir_node(dir_node* node) {
   assert(empty_dir_node(node));
 }
 
+
 unsigned int
 add_nodes (dir_node* root, dir_node* slot, dir_node* queue) {
   struct dirent* ent;
@@ -183,6 +184,49 @@ add_root_node ( char* path, dir_node* slot, dir_node* queue ) {
   dir_node* root = ngx_queue_head(queue);
   assert(!ngx_queue_empty(queue));
   return add_nodes(root, slot, queue);
+}
+
+unsigned int
+insert_nodes ( dir_node* root,     /* root of tree to be inserted*/
+               dir_node* parent,   /* inserted subtree's parent */
+               dir_node* slot,     /* operate on this heap */
+               dir_node* queue ) { /* the queue simulate directory tree */
+  unsigned sum = 0;
+  /* find split point */
+  assert(!empty_dir_node(root));
+  assert(parent);
+  dir_node* p = ngx_queue_next(parent);
+  assert(p);
+  assert(!empty_dir_node(p));
+  
+  if (p == ngx_queue_last(queue)) { /* it is tail append */
+    DIR* root_dirp = root->dir_ptr;
+    int root_fd = dirfd(root_dirp);
+    ngx_queue_insert_tail(queue, &slot[root_fd]);
+    sum++;
+    sum += add_nodes(root, slot, queue);
+  } else {
+    /* split queue */
+    dir_node* last = ngx_queue_last(queue);
+    ngx_queue_split(queue, p, last);
+    /* install head to splited one */
+    dir_node new;
+    dir_node* nq = &new;
+    ngx_queue_init(nq);
+    ngx_queue_insert_head(last, nq);
+
+    /* add nodes */
+    DIR* root_dirp = root->dir_ptr;
+    int root_fd = dirfd(root_dirp);
+    ngx_queue_insert_tail(queue, &slot[root_fd]);
+    sum++;
+    sum += add_nodes(root, slot, queue);
+    
+    /* merge queue */
+    ngx_queue_add(queue, nq);
+    memset(nq, 0, sizeof(new));
+  }
+  return sum;
 }
 
 unsigned int
@@ -264,6 +308,22 @@ main (int argc, char**argv) {
   dir_node* the_root = ngx_queue_head(q);
   assert(the_root);
   dir_node* first = ngx_queue_next(the_root);
+  dir_node* ffirst = ngx_queue_next(first);
+
+  remove_nodes(ffirst, q);
+  count = dump_queue(q, "\nINSPECT AFTER MIDDLE REMOVE\n\n");
+  assert(count == 24);
+
+  DIR* first_dirp = first->dir_ptr;
+  dir_node_rewind(first);
+  struct dirent* middle_ent = readdir(first_dirp);
+  assert(middle_ent);
+  dir_node* middle_node;
+  middle_node = create_dir_node(middle_ent, first, dir_cluster);
+  assert(middle_node);
+  insert_nodes(middle_node, first, dir_cluster, q);
+  count = dump_queue(q, "\nINSPECT AFTER MIDDLE INSERT\n\n");
+  assert(count == 28);
 
   remove_nodes(first, q);
   count = dump_queue(q, "\nINSPECT AFTER FIRST CHILD REMOVE\n\n");
@@ -288,8 +348,7 @@ main (int argc, char**argv) {
   count = dump_queue(q, "\nINSPECT AFTER NEW TREE APPEND TO ROOT\n\n");
   assert(count == 19);
 
-  /* insert tree need split queue, append to one, then add up */
-
+  
   remove_nodes(the_root, q);
   count = dump_queue(q, "\nINSPECT AFTER ALL REMOVE\n\n");
   assert(count == 0);
