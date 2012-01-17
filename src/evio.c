@@ -52,7 +52,11 @@ int
 readdir_cb (eio_req *req)
 {
   if (EIO_RESULT (req) < 0) {
-    printf("remove subdir: %s\n",req->ptr1);
+    struct stat st;
+    int ret = lstat(req->ptr1, &st);
+    if (ret && errno == ENOENT) {
+       printf("remove subdir: %s\n",req->ptr1);
+    }
     return 0;
   }
   
