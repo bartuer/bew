@@ -54,3 +54,13 @@
 
 
 
+
+* TODO fs pub [1/3]
+  SCHEDULED: <2012-01-17 Tue 13:30>
+  CLOCK: [2012-01-17 Tue 13:22]
+  :PROPERTIES:
+  :Effort:   3:00
+  :END:
+  - [X] dir add and dir remove event
+  - [ ] eio for dir add and remove
+  - [ ] merge pub
