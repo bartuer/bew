@@ -56,8 +56,14 @@ test_dir:
 	mkdir -p /tmp/a/{b,e,f}/{c,g}/{d,h,'汉 语'}
 	touch /tmp/a/b/{i,j,k}
 
-dir:dir.c
-	$(CC) -g -I. -I$(LIBPATH)/libeio -I$(LIBPATH)/libev -o dir dir.c $(LIBPATH)/libeio/.libs/libeio.a  $(LIBPATH)/libev/.libs/libev.a
+dir:dir.o dir_node.o 
+	$(CC) -I. -I$(LIBPATH)/libeio -I$(LIBPATH)/libev -o dir dir.o dir_node.o $(LIBPATH)/libeio/.libs/libeio.a  $(LIBPATH)/libev/.libs/libev.a
+
+dir.o:dir.c
+	$(CC) -c -I. -I$(LIBPATH)/libeio -I$(LIBPATH)/libev -o dir.o dir.c
+
+dir_node.o:dir_node.c
+	$(CC) -c -I. -I$(LIBPATH)/libeio -I$(LIBPATH)/libev -o dir_node.o dir_node.c
 
 q_test:q
 	./q
