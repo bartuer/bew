@@ -70,3 +70,8 @@
 /doc/reference/sample/q_flymake.plist
 /doc/reference/sample/dir.o
 /doc/reference/sample/dir_node.o
+/doc/reference/sample/evio_flymake.plist
+/src/evio
+/src/evio.dSYM/Contents/Info.plist
+/src/evio.dSYM/Contents/Resources/DWARF/evio
+/src/evio_flymake.plist

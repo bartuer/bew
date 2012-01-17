@@ -1,19 +1,22 @@
-LIBPATH=../../../lib
+LIBPATH=../lib
 LIBEV=$(LIBPATH)/libev/.libs/libev.a
 LIBEVPATH=$(LIBPATH)/libev
 CC=clang
 CXX=clang++
 SYNTAX_CHECK_FLAG=--analyze -fno-caret-diagnostics -fno-color-diagnostics -fno-show-column
-ZMQBASE=/Users/bartuer/local
+
+test:evio
+	mkdir -p /tmp/a/b
+	echo 'rm -Rf /tmp/a/b; touch `mktemp -d /tmp/a/c/XX`/test' | ./evio /tmp/a /tmp/a/b /tmp/a/c
 
 evio_test:evio /tmp/evio
 	mkdir -p /tmp/evio/fail
-	echo "/tmp/evio/XX" |./evio /tmp/evio
-	echo "/tmp/evio/fail/XX" |./evio /tmp/evio
+	echo 'touch `mktemp -d /tmp/evio/XX`/test' |./evio /tmp/evio 
+	echo 'touch `mktemp -d /tmp/evio/fail/XX`/test' |./evio /tmp/evio
 
 evio_memcheck:evio
-	touch Watcher/some.txt
-	valgrind --leak-check=yes ./evio Watcher
+	touch /tmp/some.txt
+	valgrind --leak-check=yes ./evio /tmp
 
 evio:evio.c $(LIBEV)
 	$(CC) -g -I$(LIBPATH)/libeio -I$(LIBPATH)/libev -o evio evio.c $(LIBPATH)/libeio/.libs/libeio.a  $(LIBPATH)/libev/.libs/libev.a
