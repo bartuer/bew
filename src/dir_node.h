@@ -14,6 +14,8 @@
 #include "ev.h"
 #include "ngx-queue.h"
 
+#define MAXFDNUM 1024
+
 typedef struct dir_node_s dir_node;
 
 struct dir_node_s {
@@ -49,3 +51,4 @@ unsigned int remove_nodes ( dir_node* root,
                             dir_node* queue );
 void dir_node_rewind ( dir_node* node );
 int dump_queue ( dir_node* q , char* head_line );
+extern void dir_cb (EV_P_ ev_io *w, int revents);

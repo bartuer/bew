@@ -75,3 +75,7 @@
 /src/evio.dSYM/Contents/Info.plist
 /src/evio.dSYM/Contents/Resources/DWARF/evio
 /src/evio_flymake.plist
+/src/dir.o
+/src/dir_node.o
+/src/dir_node_flymake.h
+/src/dir_node_flymake_master.c

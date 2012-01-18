@@ -6,8 +6,9 @@ CXX=clang++
 SYNTAX_CHECK_FLAG=--analyze -fno-caret-diagnostics -fno-color-diagnostics -fno-show-column
 
 test:evio
+	mkdir -p /tmp/a/c
 	mkdir -p /tmp/a/b
-	echo 'rm -Rf /tmp/a/b; touch `mktemp -d /tmp/a/c/XX`/test' | ./evio /tmp/a /tmp/a/b /tmp/a/c
+	echo 'rm -Rf /tmp/a/b; touch `mktemp -d /tmp/a/c/XX`/test' | ./evio /tmp/a
 
 evio_test:evio /tmp/evio
 	mkdir -p /tmp/evio/fail
@@ -18,8 +19,8 @@ evio_memcheck:evio
 	touch /tmp/some.txt
 	valgrind --leak-check=yes ./evio /tmp
 
-evio:evio.c $(LIBEV)
-	$(CC) -g -I$(LIBPATH)/libeio -I$(LIBPATH)/libev -o evio evio.c $(LIBPATH)/libeio/.libs/libeio.a  $(LIBPATH)/libev/.libs/libev.a
+evio:evio.c $(LIBEV) dir_node.o
+	$(CC) -g -I$(LIBPATH)/libeio -I$(LIBPATH)/libev -o evio evio.c dir_node.o $(LIBPATH)/libeio/.libs/libeio.a  $(LIBPATH)/libev/.libs/libev.a
 
 /tmp/evio:
 	mkdir /tmp/evio
@@ -47,24 +48,6 @@ pub:pub.o
 pub.o:pub.c
 	$(CC) -c -O3 -I. -I$(ZMQBASE)/include pub.c -o pub.o
 
-
-dir_memcheck:dir test_dir
-	valgrind --leak-check=yes ./dir /tmp/a
-
-dir_test:dir test_dir
-	./dir /tmp/a
-
-test_dir:
-	rm -rf /tmp/a
-	mkdir -p /tmp/a/{b,e,f}/{c,g}/{d,h,'汉 语'}
-	touch /tmp/a/b/{i,j,k}
-
-dir:dir.o dir_node.o 
-	$(CC) -I. -I$(LIBPATH)/libeio -I$(LIBPATH)/libev -o dir dir.o dir_node.o $(LIBPATH)/libeio/.libs/libeio.a  $(LIBPATH)/libev/.libs/libev.a
-
-dir.o:dir.c
-	$(CC) -c -I. -I$(LIBPATH)/libeio -I$(LIBPATH)/libev -o dir.o dir.c
-
 dir_node.o:dir_node.c
 	$(CC) -c -I. -I$(LIBPATH)/libeio -I$(LIBPATH)/libev -o dir_node.o dir_node.c
 
@@ -82,4 +65,3 @@ clean:
 	rm evio
 	rm pub
 	rm sub
-	rm dir

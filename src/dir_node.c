@@ -1,6 +1,8 @@
 #include "dir_node.h"
 
-static dir_node dir_cluster[MAXFDNUM];
+extern dir_node dir_cluster[MAXFDNUM];
+extern ev_io dir_watcher[MAXFDNUM];
+extern struct ev_loop* loop;
 
 int
 empty_dir_node ( dir_node* node ) {
@@ -40,6 +42,8 @@ create_root_dir_node (char* path, dir_node* slot) {
   assert(fd < MAXFDNUM);
   assert(empty_dir_node(slot + fd));
   memcpy((dir_node*)(slot + fd), &node, sizeof(node));
+  ev_io_init(&dir_watcher[fd], dir_cb, fd, EV_LIBUV_KQUEUE_HACK);
+  ev_io_start(loop, &dir_watcher[fd]);
   return slot + fd;
 }
 
@@ -88,6 +92,8 @@ create_dir_node (struct dirent* entry,
   assert(fd < MAXFDNUM);
   assert(empty_dir_node(slot + fd));
   memcpy((dir_node*)(slot + fd), &node, sizeof(node));
+  ev_io_init(&dir_watcher[fd], dir_cb, fd, EV_LIBUV_KQUEUE_HACK);
+  ev_io_start(loop, &dir_watcher[fd]);
   return slot + fd;
 }
 

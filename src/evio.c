@@ -13,21 +13,31 @@
 #include <time.h>
 #include "eio.h"
 #include "ev.h"
+#include "dir_node.h"
+#include "ngx-queue.h"
 
 char pwd[MAXPATHLEN];               /* path concat buffer pointer*/
-char pwdb[MAXPATHLEN];               /* path concat buffer pointer*/
-char pwdc[MAXPATHLEN];
-char* fdmap[10];
 
-time_t now;                     /* current time */
+time_t now;                        /* current time */
 DIR* dp = NULL;
 char* root = NULL;
+
 /* use heap simulate stack, so readdir can be called recursively */
 char **freelist = NULL;
 size_t freelist_len = 0;
 
-
 int respipe [2];
+
+dir_node dir_cluster[MAXFDNUM];
+ev_io dir_watcher[MAXFDNUM];
+static dir_node empty_node;
+static dir_node* q;
+ev_timer timeout_watcher;
+static ev_idle repeat_watcher;
+static ev_async ready_watcher;
+static ev_io cmd_watcher;
+struct ev_loop *loop;
+
 
 int
 later_than(time_t time1, struct timespec time2)
@@ -107,16 +117,6 @@ readdir_cb (eio_req *req)
   return 0;
 }
 
-ev_timer timeout_watcher;
-static ev_idle repeat_watcher;
-static ev_async ready_watcher;
-static ev_io dir_watcher_a;
-static ev_io dir_watcher_b;
-static ev_io dir_watcher_c;
-
-static ev_io cmd_watcher;
-static struct ev_loop *loop;
-
 static void
 timeout_cb (EV_P_ ev_timer *w, int revents)
 {
@@ -170,7 +170,7 @@ cmd_cb (struct ev_loop *loop, ev_io *w, int revents)
   }
 }
 
-static void
+void
 dir_cb (EV_P_ ev_io *w, int revents)
 {
   assert(revents == EV_LIBUV_KQUEUE_HACK);
@@ -178,8 +178,8 @@ dir_cb (EV_P_ ev_io *w, int revents)
   freelist_len = 0;
 
   time(&now);
-  printf("fdmap[%d]: %s\n",w->fd, fdmap[w->fd]);
-  root = strdup(fdmap[w->fd]);
+  printf("dir_cluster[%d]: %s\n", w->fd, dir_cluster[w->fd].path);
+  root = strdup(dir_cluster[w->fd].path);
   eio_readdir(root, EIO_READDIR_DENTS|EIO_READDIR_DIRS_FIRST, 0, readdir_cb, root);
 }
 
@@ -191,32 +191,14 @@ main (int argc, char**argv)
     exit(1);
   }
 
-  realpath(argv[1], pwd);
-  dp = opendir(pwd);
-  if ( errno ) {
-    printf("%s, %s is ? not valid directory\n", strerror(errno), pwd);
-    exit(1);
-  }
-  int dfd = dirfd(dp);
-  fdmap[dfd] = pwd;
-  
-  realpath(argv[2], pwdb);
-  DIR* dpb = opendir(pwdb);
-  if ( errno ) {
-    printf("%s, %s is ? not valid directory\n", strerror(errno), pwd);
-    exit(1);
-  }
-  int dfdb = dirfd(dpb);
-  fdmap[dfdb] = pwdb;
+  /* map fd : path */
+  memset(dir_cluster, 0, sizeof(dir_cluster));
 
-  realpath(argv[3], pwdc);
-  DIR* dpc = opendir(pwdc);
-  if ( errno ) {
-    printf("%s, %s is not ? valid directory\n", strerror(errno), pwd);
-    exit(1);
-  }
-  int dfdc = dirfd(dpc);
-  fdmap[dfdc] = pwdc;
+  /* queue to traverse paths as directory */
+  q = &empty_node;
+  memset(q, 0, sizeof(empty_node));
+  ngx_queue_init(q);
+  assert(ngx_queue_empty(q));
 
   loop = ev_loop_new (EVBACKEND_KQUEUE);
 
@@ -225,13 +207,9 @@ main (int argc, char**argv)
 
   ev_timer_init (&timeout_watcher, timeout_cb, 1, 0.);
   ev_timer_start (loop, &timeout_watcher);
+
   
-  ev_io_init (&dir_watcher_a, dir_cb, dfd, EV_LIBUV_KQUEUE_HACK);
-  ev_io_init (&dir_watcher_b, dir_cb, dfdb, EV_LIBUV_KQUEUE_HACK);    
-  ev_io_init (&dir_watcher_c, dir_cb, dfdc, EV_LIBUV_KQUEUE_HACK);    
-  ev_io_start (loop, &dir_watcher_a);
-  ev_io_start (loop, &dir_watcher_b);
-  ev_io_start (loop, &dir_watcher_c);
+  add_root_node(argv[1], dir_cluster, q);
   
   ev_idle_init (&repeat_watcher, repeat);
 
