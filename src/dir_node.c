@@ -176,7 +176,6 @@ insert_nodes ( dir_node* root,     /* root of tree to be inserted*/
   assert(parent);
   dir_node* p = ngx_queue_next(parent);
   assert(p);
-  assert(!empty_dir_node(p));
   
   if (p == ngx_queue_last(queue)) { /* it is tail append */
     DIR* root_dirp = root->dir_ptr;

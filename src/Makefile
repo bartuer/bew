@@ -4,6 +4,7 @@ LIBEVPATH=$(LIBPATH)/libev
 CC=clang
 CXX=clang++
 SYNTAX_CHECK_FLAG=--analyze -fno-caret-diagnostics -fno-color-diagnostics -fno-show-column
+ZMQBASE=/Users/bartuer/local
 
 test:evio
 	mkdir -p /tmp/a/c
@@ -19,8 +20,11 @@ evio_memcheck:evio
 	touch /tmp/some.txt
 	valgrind --leak-check=yes ./evio /tmp
 
-evio:evio.c $(LIBEV) dir_node.o
-	$(CC) -g -I$(LIBPATH)/libeio -I$(LIBPATH)/libev -o evio evio.c dir_node.o $(LIBPATH)/libeio/.libs/libeio.a  $(LIBPATH)/libev/.libs/libev.a
+evio:evio.o dir_node.o
+	$(CXX) -o evio evio.o dir_node.o $(LIBPATH)/libeio/.libs/libeio.a $(LIBPATH)/libev/.libs/libev.a -L$(ZMQBASE)/lib -lzmq -lczmq
+
+evio.o:evio.c $(LIBEV) 
+	$(CC) -I$(LIBPATH)/libeio -I$(LIBPATH)/libev -I$(ZMQBASE)/include -c evio.c 
 
 /tmp/evio:
 	mkdir /tmp/evio
@@ -33,14 +37,10 @@ sub_memcheck:sub
 	valgrind --leak-check=yes ./sub tcp://localhost:5556 10001 
 
 sub:sub.o
-	g++ -L$(ZMQBASE)/lib -lzmq -lczmq -o sub sub.o
+	$(CXX) -L$(ZMQBASE)/lib -lzmq -lczmq -o sub sub.o
 
 sub.o:sub.c
 	$(CC) -c -O3 -I. -I$(ZMQBASE)/include sub.c -o sub.o
-
-
-pub_memcheck:pub
-	valgrind --leak-check=yes ./pub
 
 pub:pub.o
 	$(CXX) -L$(ZMQBASE)/lib -lzmq -lczmq -lev -leio -o pub pub.o
@@ -51,14 +51,9 @@ pub.o:pub.c
 dir_node.o:dir_node.c
 	$(CC) -c -I. -I$(LIBPATH)/libeio -I$(LIBPATH)/libev -o dir_node.o dir_node.c
 
-q_test:q
-	./q
-
-q:q.c
-	$(CC) -I. -o q q.c
 
 check-syntax:
-	$(CC) $(SYNTAX_CHECK_FLAG) -I. -I$(LIBPATH)/libeio -I$(LIBPATH)/libev $(CHK_SOURCES)
+	$(CC) -I$(ZMQBASE)/include $(SYNTAX_CHECK_FLAG) -I. -I$(LIBPATH)/libeio -I$(LIBPATH)/libev $(CHK_SOURCES)
 
 clean:
 	rm *.o

@@ -80,3 +80,8 @@
 /src/dir_node_flymake.h
 /src/dir_node_flymake_master.c
 /src/dir_node_flymake.plist
+/src/evio.o
+/src/pub
+/src/pub.o
+/src/sub
+/src/sub.o
