@@ -19,7 +19,6 @@
 char pwd[MAXPATHLEN];               /* path concat buffer pointer*/
 
 time_t now;                        /* current time */
-char* top = NULL;
 int* evented_fd;
 
 dir_node dir_cluster[MAXFDNUM];
@@ -201,8 +200,7 @@ dir_cb (EV_P_ ev_io *w, int revents)
   printf("dir_cluster[%d]: %s\n", w->fd, dir_cluster[w->fd].path);
   evented_fd = malloc(sizeof(int));
   *evented_fd = w->fd;
-  top = strdup(dir_cluster[w->fd].path);
-  eio_readdir(top, EIO_READDIR_DENTS|EIO_READDIR_DIRS_FIRST, 0, readdir_cb, evented_fd);
+  eio_readdir(dir_cluster[w->fd].path, EIO_READDIR_DENTS|EIO_READDIR_DIRS_FIRST, 0, readdir_cb, evented_fd);
 }
 
 int
@@ -242,10 +240,6 @@ main (int argc, char**argv)
   };
   
   ev_run (loop, 0);
-
-  if ( top ) {
-    free(top);
-  }
 
   return 0;
 }

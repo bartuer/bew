@@ -54,8 +54,9 @@
 
 
 
-* TODO fs pub [3/4]
+* TODO fs pub [4/4]
   SCHEDULED: <2012-01-17 Tue 13:30>
+  CLOCK: [2012-01-19 Thu 03:21]
   :PROPERTIES:
   :Clockhistory: 9
   | :Clock1: | [2012-01-17 Tue 13:22]--[2012-01-17 Tue 16:45] =>  3:23 | init              |   203 |
@@ -75,9 +76,10 @@
 
   - [X] dir add and dir remove event
   - [X] data structure map dir -> fd
-        - let cbt allocate path memory
+        - let cbt allocate path memory 
+          if need merge with dir_node
   - [X] eio for dir add and remove
         - init dir tree insert
         - middle dir tree remove
         - middle dir tree insert
-  - [ ] merge pub
+  - [X] merge pub
