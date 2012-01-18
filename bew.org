@@ -56,19 +56,19 @@
 
 * TODO fs pub [3/4]
   SCHEDULED: <2012-01-17 Tue 13:30>
-  CLOCK: [2012-01-19 Thu 02:21]
   :PROPERTIES:
-  :Clockhistory: 8
+  :Clockhistory: 9
   | :Clock1: | [2012-01-17 Tue 13:22]--[2012-01-17 Tue 16:45] =>  3:23 | init              |   203 |
   | :Clock2: | [2012-01-17 Tue 16:59]--[2012-01-17 Tue 18:05] =>  1:06 | cbt               |    66 |
   | :Clock3: | [2012-01-17 Tue 19:08]--[2012-01-17 Tue 20:24] =>  1:16 | cbt               |    76 |
   | :Clock4: | [2012-01-18 Wed 06:55]--[2012-01-18 Wed 08:45] =>  1:50 | cbt               |   110 |
   | :Clock5: | [2012-01-18 Wed 10:34]--[2012-01-18 Wed 13:28] =>  2:54 | cbt               |   174 |
   | :Clock6: | [2012-01-18 Wed 16:20]--[2012-01-18 Wed 18:23] =>  2:03 | cbt               |   123 |
-  | :Clock7: | [2012-01-18 Wed 22:44]--[2012-01-18 Wed 23:59] =>  1:15 | eio + dir_node    |       |
-  | :Clock8: | [2012-01-18 Wed 23:59]--[2012-01-19 Thu 02:18] =>  2:19 | eio + remove node |       |
-  |          |                                                         |                   | 12.53 |
-  #+TBLFM: $4='(convert-time-to-minutes $2)::@9$4=vsum(@1..@8)/60;%.2f
+  | :Clock7: | [2012-01-18 Wed 22:44]--[2012-01-18 Wed 23:59] =>  1:15 | eio + dir_node    |    75 |
+  | :Clock8: | [2012-01-18 Wed 23:59]--[2012-01-19 Thu 02:18] =>  2:19 | eio + remove node |   139 |
+  | :Clock9: | [2012-01-19 Thu 02:21]--[2012-01-19 Thu 03:16] =>  0:55 | eio + insert node |    55 |
+  |          |                                                         |                   | 17.02 |
+  #+TBLFM: $4='(convert-time-to-minutes $2)::@10$4=vsum(@1..@9)/60;%.2f
   :Effort:   3:00
   :Commit:   (git-link "~/local/src/critbit" "3b1730351bf32f25cdf481b4ef6420cbe0864cef")
   :END:

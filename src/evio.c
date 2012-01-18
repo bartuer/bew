@@ -19,15 +19,8 @@
 char pwd[MAXPATHLEN];               /* path concat buffer pointer*/
 
 time_t now;                        /* current time */
-DIR* dp = NULL;
 char* top = NULL;
 int* evented_fd;
-
-/* use heap simulate stack, so readdir can be called recursively */
-char **freelist = NULL;
-size_t freelist_len = 0;
-
-int respipe [2];
 
 dir_node dir_cluster[MAXFDNUM];
 ev_io dir_watcher[MAXFDNUM];
@@ -38,7 +31,6 @@ static ev_idle repeat_watcher;
 static ev_async ready_watcher;
 static ev_io cmd_watcher;
 struct ev_loop *loop;
-
 
 int
 later_than(time_t time1, struct timespec time2)
@@ -96,19 +88,12 @@ readdir_cb (eio_req *req)
   }
   
   char *names = (char *)req->ptr2;
-
-  if ( freelist ) {
-    freelist = realloc(freelist, (req->result + freelist_len) * sizeof(char*));    
-  } else {
-    freelist = calloc(req->result, sizeof(char*));
-  }
   
   int i;
   for (i = 0; i < req->result; ++i)
     {
       struct eio_dirent *ent = ents + i;
       char *name = names + ent->nameofs;
-      freelist[freelist_len + i]  = 0;
 
       snprintf(pwd, MAXPATHLEN, "%s/%s", req_data, name);
       struct stat st;
@@ -150,7 +135,6 @@ readdir_cb (eio_req *req)
         }
       }
     }
-  freelist_len += req->result;
 
   return 0;
 }
@@ -212,8 +196,6 @@ void
 dir_cb (EV_P_ ev_io *w, int revents)
 {
   assert(revents == EV_LIBUV_KQUEUE_HACK);
-  freelist = NULL;
-  freelist_len = 0;
 
   time(&now);
   printf("dir_cluster[%d]: %s\n", w->fd, dir_cluster[w->fd].path);
@@ -263,20 +245,6 @@ main (int argc, char**argv)
 
   if ( top ) {
     free(top);
-  }
-
-  /* free all allocated path */
-  int i;
-  if ( freelist ) {
-    for (i = 0; i < freelist_len; ++i ) {
-      if (freelist[i]) {
-        free(freelist[i]);
-      }
-    }
-    free(freelist);
-  }
-  if ( dp ) {
-    closedir(dp);
   }
 
   return 0;
