@@ -54,13 +54,23 @@
 
 
 
-
-* TODO fs pub [1/3]
+* TODO fs pub [2/4]
   SCHEDULED: <2012-01-17 Tue 13:30>
-  CLOCK: [2012-01-17 Tue 13:22]
   :PROPERTIES:
+  :Clockhistory: 6
+  | :Clock1: | [2012-01-17 Tue 13:22]--[2012-01-17 Tue 16:45] =>  3:23 | init |   203 |
+  | :Clock2: | [2012-01-17 Tue 16:59]--[2012-01-17 Tue 18:05] =>  1:06 | cbt  |    66 |
+  | :Clock3: | [2012-01-17 Tue 19:08]--[2012-01-17 Tue 20:24] =>  1:16 | cbt  |    76 |
+  | :Clock4: | [2012-01-18 Wed 06:55]--[2012-01-18 Wed 08:45] =>  1:50 | cbt  |   110 |
+  | :Clock5: | [2012-01-18 Wed 10:34]--[2012-01-18 Wed 13:28] =>  2:54 | cbt  |   174 |
+  | :Clock6: | [2012-01-18 Wed 16:20]--[2012-01-18 Wed 18:23] =>  2:03 | cbt  |   123 |
+  |          |                                                         |      | 12.53 |
+  #+TBLFM: $4='(convert-time-to-minutes $2)::@7$4=vsum(@1..@6)/60;%.2f
   :Effort:   3:00
+  :Commit:   (git-link "~/local/src/critbit" "3b1730351bf32f25cdf481b4ef6420cbe0864cef")
   :END:
+
   - [X] dir add and dir remove event
+  - [X] data structure map dir -> fd
   - [ ] eio for dir add and remove
   - [ ] merge pub
