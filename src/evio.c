@@ -54,8 +54,9 @@ later_than(time_t time1, struct timespec time2)
 void
 eio_readdir_r(const char *path, int flags, int pri, eio_cb cb, int i)
 {
-  freelist[i] = strdup(path);
-  eio_readdir(freelist[i], flags, pri, cb, freelist[i]);
+  evented_fd = malloc(sizeof(int));
+  *evented_fd = i;
+  eio_readdir(dir_cluster[i].path, flags, pri, cb, evented_fd);
   return;
 }
 
@@ -71,7 +72,6 @@ readdir_cb (eio_req *req)
        evented_fd = NULL;
        remove_nodes(&dir_cluster[fd], q);
        printf("remove subdir: %s\n",req->ptr1);
-       printf("readdir_cb dir_cluster[%d]: %s\n", fd, dir_cluster[fd].path);
     }
     return 0;
   }
@@ -82,12 +82,8 @@ readdir_cb (eio_req *req)
   printf("req->data: %d\n",fd);
 
   char* req_data;
-  if ( fd  ) {
-    req_data = dir_cluster[fd].path;
-  } else {
-    req_data = "hmm";
-  }
 
+  req_data = dir_cluster[fd].path;
   
   struct eio_dirent *ents = (struct eio_dirent *)req->ptr1;
   
@@ -120,7 +116,30 @@ readdir_cb (eio_req *req)
       if ( ent->type ==  EIO_DT_DIR) {
         if ( later_than(now, st.st_birthtimespec) ) {
           printf ("add subdir:  %s/%s\n", req_data, name);
-          /* eio_readdir_r(pwd, EIO_READDIR_DENTS|EIO_READDIR_DIRS_FIRST, 0, readdir_cb, freelist_len + i); */
+          dir_node *father = &dir_cluster[fd];
+          dir_node *son;
+          DIR* father_dirp = father->dir_ptr;
+          dir_node_rewind(father);
+          struct dirent* son_ent = NULL;
+          while ((son_ent = readdir(father_dirp)))  {
+            if ( son_ent->d_type == DT_DIR &&
+                 strcmp(son_ent->d_name, name) == 0
+                 ) {
+              break;
+            } else {
+              son_ent = NULL;
+            }
+          }
+          assert(son_ent);
+          son = create_dir_node(son_ent, father, dir_cluster);
+          assert(son);
+          insert_nodes(son, father, dir_cluster, q);
+          int son_fd = son - &dir_cluster[0];
+          eio_readdir_r(pwd,
+                        EIO_READDIR_DENTS|EIO_READDIR_DIRS_FIRST,
+                        0,
+                        readdir_cb,
+                        son_fd);
         }
         else if ( later_than(now, st.st_ctimespec) ) {
           printf ("change subdir:  %s/%s\n", req_data, name);
@@ -201,7 +220,6 @@ dir_cb (EV_P_ ev_io *w, int revents)
   evented_fd = malloc(sizeof(int));
   *evented_fd = w->fd;
   top = strdup(dir_cluster[w->fd].path);
-  printf("*evented_fd: %d\n",*evented_fd);
   eio_readdir(top, EIO_READDIR_DENTS|EIO_READDIR_DIRS_FIRST, 0, readdir_cb, evented_fd);
 }
 

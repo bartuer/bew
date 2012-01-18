@@ -138,7 +138,7 @@ add_nodes (dir_node* root, dir_node* slot, dir_node* queue) {
   unsigned int sum = 0;
   while ( (ent = readdir(root->dir_ptr)) ) {
     assert(ent);
-    if ( ent->d_type == DT_DIR ) {
+    if ( ent->d_type == DT_DIR  ) {
        dir_node* node;
        node = create_dir_node(ent, root, slot);
        assert(node);
