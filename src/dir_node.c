@@ -218,6 +218,9 @@ remove_nodes ( dir_node* root, dir_node* queue ) {
       dir_node* r = p;
       ngx_queue_remove(r);
       clean_dir_node(r);
+      int fd = r - &dir_cluster[0];
+      assert(r == &dir_cluster[fd]);
+      ev_io_stop(loop, &dir_watcher[fd]);
       sum++;
     }
   } else {                      /* decent of topest */
@@ -226,6 +229,9 @@ remove_nodes ( dir_node* root, dir_node* queue ) {
           p = ngx_queue_next(p), sum++ ) {
       ngx_queue_remove(p);
       clean_dir_node(p);
+      int fd = p - &dir_cluster[0];
+      assert(p == &dir_cluster[fd]);
+      ev_io_stop(loop, &dir_watcher[fd]);
       } 
   }
   return sum;

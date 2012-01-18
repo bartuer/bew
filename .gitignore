@@ -79,3 +79,4 @@
 /src/dir_node.o
 /src/dir_node_flymake.h
 /src/dir_node_flymake_master.c
+/src/dir_node_flymake.plist

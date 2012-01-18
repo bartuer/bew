@@ -77,6 +77,6 @@
         - let cbt allocate path memory
   - [X] eio for dir add and remove
         - init dir tree insert
-        - middle dir tree insert
         - middle dir tree remove
+        - middle dir tree insert
   - [ ] merge pub

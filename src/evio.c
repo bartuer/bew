@@ -20,7 +20,8 @@ char pwd[MAXPATHLEN];               /* path concat buffer pointer*/
 
 time_t now;                        /* current time */
 DIR* dp = NULL;
-char* root = NULL;
+char* top = NULL;
+int* evented_fd;
 
 /* use heap simulate stack, so readdir can be called recursively */
 char **freelist = NULL;
@@ -65,16 +66,34 @@ readdir_cb (eio_req *req)
     struct stat st;
     int ret = lstat(req->ptr1, &st);
     if (ret && errno == ENOENT) {
+       int fd = *((int*)req->data);
+       free(req->data);
+       evented_fd = NULL;
+       remove_nodes(&dir_cluster[fd], q);
        printf("remove subdir: %s\n",req->ptr1);
+       printf("readdir_cb dir_cluster[%d]: %s\n", fd, dir_cluster[fd].path);
     }
     return 0;
   }
+
+  int fd = *((int*)req->data);
+  free(req->data);
+  evented_fd = NULL;
+  printf("req->data: %d\n",fd);
+
+  char* req_data;
+  if ( fd  ) {
+    req_data = dir_cluster[fd].path;
+  } else {
+    req_data = "hmm";
+  }
+
   
   struct eio_dirent *ents = (struct eio_dirent *)req->ptr1;
   
   if ( ents->type != EIO_DT_DIR ) {
     struct stat leaf_st ;
-    lstat(req->data, &leaf_st);
+    lstat(req_data, &leaf_st);
     if (!later_than(now, leaf_st.st_ctimespec)) {
       return 0;
     }
@@ -95,20 +114,20 @@ readdir_cb (eio_req *req)
       char *name = names + ent->nameofs;
       freelist[freelist_len + i]  = 0;
 
-      snprintf(pwd, MAXPATHLEN, "%s/%s", (char*)req->data, name);
+      snprintf(pwd, MAXPATHLEN, "%s/%s", req_data, name);
       struct stat st;
       lstat(pwd, &st);
       if ( ent->type ==  EIO_DT_DIR) {
         if ( later_than(now, st.st_birthtimespec) ) {
-          printf ("add subdir:  %s/%s\n", (char*)req->data, name);
-          eio_readdir_r(pwd, EIO_READDIR_DENTS|EIO_READDIR_DIRS_FIRST, 0, readdir_cb, freelist_len + i);
+          printf ("add subdir:  %s/%s\n", req_data, name);
+          /* eio_readdir_r(pwd, EIO_READDIR_DENTS|EIO_READDIR_DIRS_FIRST, 0, readdir_cb, freelist_len + i); */
         }
         else if ( later_than(now, st.st_ctimespec) ) {
-          printf ("change subdir:  %s/%s\n", (char*)req->data, name);
+          printf ("change subdir:  %s/%s\n", req_data, name);
         }
       } else {
         if (later_than(now, st.st_ctimespec)) {
-          printf ("file change:  %s/%s\n", (char*)req->data, name);
+          printf ("file change:  %s/%s\n", req_data, name);
         }
       }
     }
@@ -179,8 +198,11 @@ dir_cb (EV_P_ ev_io *w, int revents)
 
   time(&now);
   printf("dir_cluster[%d]: %s\n", w->fd, dir_cluster[w->fd].path);
-  root = strdup(dir_cluster[w->fd].path);
-  eio_readdir(root, EIO_READDIR_DENTS|EIO_READDIR_DIRS_FIRST, 0, readdir_cb, root);
+  evented_fd = malloc(sizeof(int));
+  *evented_fd = w->fd;
+  top = strdup(dir_cluster[w->fd].path);
+  printf("*evented_fd: %d\n",*evented_fd);
+  eio_readdir(top, EIO_READDIR_DENTS|EIO_READDIR_DIRS_FIRST, 0, readdir_cb, evented_fd);
 }
 
 int
@@ -208,7 +230,6 @@ main (int argc, char**argv)
   ev_timer_init (&timeout_watcher, timeout_cb, 1, 0.);
   ev_timer_start (loop, &timeout_watcher);
 
-  
   add_root_node(argv[1], dir_cluster, q);
   
   ev_idle_init (&repeat_watcher, repeat);
@@ -222,8 +243,8 @@ main (int argc, char**argv)
   
   ev_run (loop, 0);
 
-  if ( root ) {
-    free(root);
+  if ( top ) {
+    free(top);
   }
 
   /* free all allocated path */
