@@ -49,6 +49,8 @@ unsigned int insert_nodes ( dir_node* root,
                             dir_node* queue );
 unsigned int remove_nodes ( dir_node* root,
                             dir_node* queue );
+unsigned int remove_node ( dir_node* p,
+                           dir_node* queue );
 void dir_node_rewind ( dir_node* node );
 int dump_queue ( dir_node* q , char* head_line );
 int check_queue ( dir_node* q);

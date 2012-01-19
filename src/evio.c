@@ -62,7 +62,7 @@ readdir_cb (eio_req *req)
        int fd = *((int*)req->data);
        free(req->data);
        evented_fd = NULL;
-       int count = remove_nodes(&dir_cluster[fd], q);
+       int count = remove_node(&dir_cluster[fd], q);
        
        char update[MAXPATHLEN + 256];
        memset(update, 0, sizeof(update));
@@ -122,23 +122,18 @@ readdir_cb (eio_req *req)
           assert(son_ent);
           son = create_dir_node(son_ent, father, dir_cluster);
           assert(son);
-          insert_nodes(son, father, dir_cluster, q);
+          int count = insert_nodes(son, father, dir_cluster, q);
           int son_fd = son - &dir_cluster[0];
           char update[MAXPATHLEN + 256];
           memset(update, 0, sizeof(update));
-          sprintf(update, "direvent add subdir:  %s/%s\n", req_data, name);
+          sprintf(update, "direvent add %d subdir: %s/%s\n", count, req_data, name);
           printf("%s\n",update);
           zstr_send(publisher, update);
-          eio_readdir_r(pwd,
-                        EIO_READDIR_DENTS|EIO_READDIR_DIRS_FIRST,
-                        0,
-                        readdir_cb,
-                        son_fd);
         }
         else if ( later_than(now, st.st_ctimespec) ) {
            char update[MAXPATHLEN + 256];
            memset(update, 0, sizeof(update));
-           sprintf(update, "direvent change subdir:  %s/%s\n", req_data, name);
+           sprintf(update, "direvent change subdir: %s/%s\n", req_data, name);
            printf("%s", update);
            zstr_send(publisher, update);
         }
@@ -146,7 +141,7 @@ readdir_cb (eio_req *req)
         if (later_than(now, st.st_ctimespec)) {
            char update[MAXPATHLEN + 256];
            memset(update, 0, sizeof(update));
-           sprintf(update, "direvent file change:  %s/%s\n", req_data, name);
+           sprintf(update, "direvent file change: %s/%s\n", req_data, name);
            printf("%s", update);
            zstr_send(publisher, update);
         }

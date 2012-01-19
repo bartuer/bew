@@ -221,10 +221,12 @@ remove_nodes ( dir_node* root, dir_node* queue ) {
       dir_node* r = p;
       int fd = r - &dir_cluster[0];
       assert(r == &dir_cluster[fd]);
-      assert(!empty_dir_node(&dir_cluster[fd]));
+      /* this is bad fix,  should one dir one watcher*/
       ev_io_stop(loop, &dir_watcher[fd]);
-      ngx_queue_remove(r);
-      clean_dir_node(r);
+      ngx_queue_remove(r); 
+      if ( !empty_dir_node(&dir_cluster[fd]) ) {
+        clean_dir_node(r);        
+      }
       sum++;
     }
   } else {                      /* decent of topest */
@@ -233,13 +235,26 @@ remove_nodes ( dir_node* root, dir_node* queue ) {
           p = ngx_queue_next(p), sum++ ) {
       int fd = p - &dir_cluster[0];
       assert(p == &dir_cluster[fd]);
-      assert(!empty_dir_node(&dir_cluster[fd]));
+      /* this is bad fix,  should one dir one watcher*/
       ev_io_stop(loop, &dir_watcher[fd]);
-      ngx_queue_remove(p);
-      clean_dir_node(p);
-      } 
+      ngx_queue_remove(p); 
+      if ( !empty_dir_node(&dir_cluster[fd]) ) {
+        clean_dir_node(p);        
+      }
+    } 
   }
   return sum;
+}
+
+unsigned int
+remove_node ( dir_node* p, dir_node* queue ) {
+  int fd = p - &dir_cluster[0];
+  assert(p == &dir_cluster[fd]);
+  ev_io_stop(loop, &dir_watcher[fd]);
+  ngx_queue_remove(p); 
+  assert(!empty_dir_node(p));
+  clean_dir_node(p);
+  return 1;
 }
 
 void
