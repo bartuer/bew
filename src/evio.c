@@ -25,7 +25,7 @@ dir_node dir_cluster[MAXFDNUM];
 ev_io dir_watcher[MAXFDNUM];
 static dir_node empty_node;
 static dir_node* q;
-ev_timer timeout_watcher;
+static ev_timer timeout_watcher;
 static ev_idle repeat_watcher;
 static ev_async ready_watcher;
 static ev_io cmd_watcher;
@@ -62,11 +62,11 @@ readdir_cb (eio_req *req)
        int fd = *((int*)req->data);
        free(req->data);
        evented_fd = NULL;
-       remove_nodes(&dir_cluster[fd], q);
-
+       int count = remove_nodes(&dir_cluster[fd], q);
+       
        char update[MAXPATHLEN + 256];
        memset(update, 0, sizeof(update));
-       sprintf(update, "direvent remove subdir: %s\n", req->ptr1);
+       sprintf(update, "direvent remove %d subdir: %s\n", count, req->ptr1);
        printf("%s", update);
        zstr_send(publisher, update);
     }
@@ -76,7 +76,6 @@ readdir_cb (eio_req *req)
   int fd = *((int*)req->data);
   free(req->data);
   evented_fd = NULL;
-  printf("req->data: %d\n",fd);
 
   char* req_data;
 
@@ -160,7 +159,8 @@ readdir_cb (eio_req *req)
 static void
 timeout_cb (EV_P_ ev_timer *w, int revents)
 {
-  ev_break (EV_A_ EVBREAK_ONE);
+  check_queue(q);
+  /* dump_queue(q, "WATCHER\n"); */
 }
 
 static void
@@ -216,7 +216,7 @@ dir_cb (EV_P_ ev_io *w, int revents)
   assert(revents == EV_LIBUV_KQUEUE_HACK);
 
   time(&now);
-  printf("dir_cluster[%d]: %s\n", w->fd, dir_cluster[w->fd].path);
+  printf("\n\nEVENT dir_cluster[%d]: %s\n", w->fd, dir_cluster[w->fd].path);
   evented_fd = malloc(sizeof(int));
   *evented_fd = w->fd;
   eio_readdir(dir_cluster[w->fd].path,
@@ -251,9 +251,9 @@ main (int argc, char**argv)
   ev_io_init (&cmd_watcher, cmd_cb, 0, EV_READ);
   ev_io_start (loop, &cmd_watcher);
 
-  /* ev_timer_init (&timeout_watcher, timeout_cb, 1, 0.); */
-  /* ev_timer_start (loop, &timeout_watcher); */
-
+  ev_timer_init (&timeout_watcher, timeout_cb, 1, 1.);
+  ev_timer_start (loop, &timeout_watcher);
+ 
   add_root_node(argv[1], dir_cluster, q);
   
   ev_idle_init (&repeat_watcher, repeat);
