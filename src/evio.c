@@ -146,7 +146,7 @@ readdir_cb (eio_req *req)
         if (later_than(now, st.st_ctimespec)) {
            char update[MAXPATHLEN + 256];
            memset(update, 0, sizeof(update));
-           sprintf(update, "direvent file change: %s/%s\n", req_data, name);
+           sprintf(update, "direvent file add: %s/%s\n", req_data, name);
            printf("%s", update);
            zstr_send(publisher, update);
         }
