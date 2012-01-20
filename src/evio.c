@@ -66,7 +66,7 @@ readdir_cb (eio_req *req)
        
        char update[MAXPATHLEN + 256];
        memset(update, 0, sizeof(update));
-       sprintf(update, "direvent remove %d subdir: %s\n", count, req->ptr1);
+       sprintf(update, "direvent remove subdir: %s\n", req->ptr1);
        printf("%s", update);
        zstr_send(publisher, update);
     }
@@ -104,7 +104,6 @@ readdir_cb (eio_req *req)
       lstat(pwd, &st);
       if ( ent->type ==  EIO_DT_DIR) {
         if ( later_than(now, st.st_birthtimespec) ) {
-
           dir_node *father = &dir_cluster[fd];
           dir_node *son;
           DIR* father_dirp = father->dir_ptr;
@@ -123,12 +122,18 @@ readdir_cb (eio_req *req)
           son = create_dir_node(son_ent, father, dir_cluster);
           assert(son);
           int count = insert_nodes(son, father, dir_cluster, q);
-          int son_fd = son - &dir_cluster[0];
-          char update[MAXPATHLEN + 256];
-          memset(update, 0, sizeof(update));
-          sprintf(update, "direvent add %d subdir: %s/%s\n", count, req_data, name);
-          printf("%s\n",update);
-          zstr_send(publisher, update);
+          int sum = 0;
+          dir_node* p;
+          for ( p = son;
+                p == son || (p->parent != NULL && p->parent != father);
+                p = ngx_queue_next(p), sum++ ) {
+            char update[MAXPATHLEN + 256];
+            memset(update, 0, sizeof(update));
+            sprintf(update, "direvent add subdir: %s\n", p->path);
+            printf("%s\n",update);
+            zstr_send(publisher, update);
+          }
+          assert(sum == count);
         }
         else if ( later_than(now, st.st_ctimespec) ) {
            char update[MAXPATHLEN + 256];
