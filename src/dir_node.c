@@ -279,6 +279,7 @@ dump_queue ( dir_node* q , char* head_line ) {
   return count;
 }
 
+static int total_dir_watcher = 0;
 int
 check_queue ( dir_node* q ) {
   int count = 0;
@@ -292,6 +293,9 @@ check_queue ( dir_node* q ) {
     }
     count++;
   }
-  printf("watch count: %d\n",count);
+  if ( total_dir_watcher != count ) {
+    printf("watch count: %d\n",count);    
+    total_dir_watcher = count;
+  }
   return count;
 }
