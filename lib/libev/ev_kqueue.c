@@ -83,7 +83,7 @@ kqueue_modify (EV_P_ int fd, int oev, int nev)
 
   if (nev & EV_LIBUV_KQUEUE_HACK)
     kqueue_change (EV_A_ fd, EVFILT_VNODE, EV_ADD | EV_ENABLE | EV_CLEAR,
-      NOTE_WRITE | NOTE_RENAME | NOTE_DELETE );
+      NOTE_ATTRIB | NOTE_WRITE | NOTE_RENAME | NOTE_DELETE | NOTE_EXTEND | NOTE_REVOKE );
 }
 
 static void

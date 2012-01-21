@@ -17,19 +17,20 @@
 #include "dir_node.h"
 #include "ngx-queue.h"
 
-char pwd[MAXPATHLEN];               /* path concat buffer pointer*/
 
-time_t now;                        /* current time */
-int* evented_fd;
 dir_node dir_cluster[MAXFDNUM];
 ev_io dir_watcher[MAXFDNUM];
+struct ev_loop *loop;
+
+static char pwd[MAXPATHLEN];               /* path concat buffer pointer*/
+static time_t now;                        /* current time */
+static int* evented_fd;
 static dir_node empty_node;
 static dir_node* q;
 static ev_timer timeout_watcher;
 static ev_idle repeat_watcher;
 static ev_async ready_watcher;
 static ev_io cmd_watcher;
-struct ev_loop *loop;
 static void* publisher;
 
 int
@@ -143,10 +144,10 @@ readdir_cb (eio_req *req)
            zstr_send(publisher, update);
         }
       } else {
-        if (later_than(now, st.st_ctimespec)) {
+        if (later_than(now, st.st_mtimespec)) {
            char update[MAXPATHLEN + 256];
            memset(update, 0, sizeof(update));
-           sprintf(update, "direvent file add: %s/%s\n", req_data, name);
+           sprintf(update, "direvent file change: %s/%s\n", req_data, name);
            printf("%s", update);
            zstr_send(publisher, update);
         }
