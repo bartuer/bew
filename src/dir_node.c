@@ -294,9 +294,10 @@ check_queue ( dir_node* q ) {
        printf("\nCHECK DIR_NODE QUEUE\n");
        printf("count: %d\n",count);
        printf("fd: %ld\n", p - &dir_cluster[0]);
-       abort();
+       /* abort(); */
+    } else {
+      count++;
     }
-    count++;
   }
   if ( total_dir_watcher != count ) {
     printf("watch count: %d\n",count);    
