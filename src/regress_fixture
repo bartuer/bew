@@ -1,0 +1,6 @@
+rm -Rf /tmp/a/*;
+mkdir -p /tmp/a/{b,c}/d/e/f/{g,h,i,j}/{k,l};
+touch /tmp/a/b/file;
+echo "content" > /tmp/a/b/file;
+rm /tmp/a/b/file;
+rm -Rf /tmp/a/b/d/e/f;

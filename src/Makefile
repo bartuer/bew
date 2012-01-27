@@ -9,7 +9,7 @@ ZMQBASE=/Users/bartuer/local
 test:evio
 	mkdir -p /tmp/a/c
 	mkdir -p /tmp/a/b
-	echo 'rm -Rf /tmp/a/b; touch `mktemp -d /tmp/a/c/XX`/test' | ./evio /tmp/a
+	cat regress_fixture | ./evio /tmp/a
 
 evio_test:evio /tmp/evio
 	mkdir -p /tmp/evio/fail

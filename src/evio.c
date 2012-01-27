@@ -60,16 +60,16 @@ readdir_cb (eio_req *req)
     struct stat st;
     int ret = lstat(req->ptr1, &st);
     if (ret && errno == ENOENT) {
-       int fd = *((int*)req->data);
-       free(req->data);
-       evented_fd = NULL;
-       remove_node(&dir_cluster[fd], q);
+      int fd = *((int*)req->data);
+      free(req->data);
+      evented_fd = NULL;
+      remove_node(&dir_cluster[fd], q);
        
-       char update[MAXPATHLEN + 256];
-       memset(update, 0, sizeof(update));
-       sprintf(update, "direvent remove subdir: %s\n", req->ptr1);
-       printf("%s", update);
-       zstr_send(publisher, update);
+      char update[MAXPATHLEN + 256];
+      memset(update, 0, sizeof(update));
+      sprintf(update, "direvent remove subdir: %s\n", req->ptr1);
+      printf("%s", update);
+      zstr_send(publisher, update);
     }
     return 0;
   }
@@ -79,7 +79,6 @@ readdir_cb (eio_req *req)
   evented_fd = NULL;
 
   char* req_data;
-
   req_data = dir_cluster[fd].path;
   
   struct eio_dirent *ents = (struct eio_dirent *)req->ptr1;
@@ -88,6 +87,7 @@ readdir_cb (eio_req *req)
     struct stat leaf_st ;
     lstat(req_data, &leaf_st);
     if (!later_than(now, leaf_st.st_ctimespec)) {
+      printf("req_data: %s\n",req_data);
       return 0;
     }
   }
@@ -101,25 +101,45 @@ readdir_cb (eio_req *req)
       char *name = names + ent->nameofs;
 
       snprintf(pwd, MAXPATHLEN, "%s/%s", req_data, name);
-      struct stat st;
-      lstat(pwd, &st);
+
       if ( ent->type ==  EIO_DT_DIR) {
-        if ( later_than(now, st.st_birthtimespec) ) {
-          dir_node *father = &dir_cluster[fd];
-          dir_node *son;
-          DIR* father_dirp = father->dir_ptr;
-          dir_node_rewind(father);
-          struct dirent* son_ent = NULL;
-          while ((son_ent = readdir(father_dirp)))  {
-            if ( son_ent->d_type == DT_DIR &&
-                 strcmp(son_ent->d_name, name) == 0
-                 ) {
+        dir_node *father = &dir_cluster[fd];
+        dir_node *son;
+        DIR* father_dirp = father->dir_ptr;
+        dir_node_rewind(father);
+        struct dirent* son_ent = NULL;
+        while ((son_ent = readdir(father_dirp)))  {
+          if ( son_ent->d_type == DT_DIR &&
+               strcmp(son_ent->d_name, name) == 0
+               ) {
+            break;
+          } else {
+            son_ent = NULL;
+          }
+        }
+        assert(son_ent);
+
+        /*
+          try slow implement, up to 1k strcmp
+          if it works, replace with cbt search implement, reduce to 1 strcmp
+        */
+        dir_node* p;
+        int has_not_included = 1;
+        if ( !empty_dir_node(ngx_queue_next(father))) {
+          for ( p = ngx_queue_next(father);
+                p->parent != NULL && p->parent != father->parent;
+                p = ngx_queue_next(p)) {
+            if ( strcmp(pwd, p->path) == 0 ) {
+              printf("include p->path: %s\n",p->path);
+              has_not_included = 0;
               break;
-            } else {
-              son_ent = NULL;
             }
           }
-          assert(son_ent);
+        } else {
+          printf("father: %s no child\n", father->path);
+        }
+
+        if ( has_not_included ) {
           son = create_dir_node(son_ent, father, dir_cluster);
           assert(son);
           int count = insert_nodes(son, father, dir_cluster, q);
@@ -136,20 +156,16 @@ readdir_cb (eio_req *req)
           }
           assert(sum == count);
         }
-        else if ( later_than(now, st.st_ctimespec) ) {
-           char update[MAXPATHLEN + 256];
-           memset(update, 0, sizeof(update));
-           sprintf(update, "direvent change subdir: %s/%s\n", req_data, name);
-           printf("%s", update);
-           zstr_send(publisher, update);
-        }
       } else {
-        if (later_than(now, st.st_mtimespec)) {
-           char update[MAXPATHLEN + 256];
-           memset(update, 0, sizeof(update));
-           sprintf(update, "direvent file change: %s/%s\n", req_data, name);
-           printf("%s", update);
-           zstr_send(publisher, update);
+        struct stat st;
+        lstat(pwd, &st);
+
+        if (later_than(now, st.st_mtimespec) || later_than(now, st.st_ctimespec)) {
+          char update[MAXPATHLEN + 256];
+          memset(update, 0, sizeof(update));
+          sprintf(update, "direvent file change: %s/%s\n", req_data, name);
+          printf("%s", update);
+          zstr_send(publisher, update);
         }
       }
     }
@@ -161,7 +177,6 @@ static void
 timeout_cb (EV_P_ ev_timer *w, int revents)
 {
   check_queue(q);
-  /* dump_queue(q, "WATCHER\n"); */
 }
 
 static void
@@ -193,22 +208,13 @@ static void
 cmd_cb (struct ev_loop *loop, ev_io *w, int revents)
 {
 
-  ev_io_stop (loop, w);
-  char line[256];
-  memset(line, 0, 256);
-  buf_t cmd = {line,256};
+  char line[8096];
+  memset(line, 0, 8096);
+  buf_t cmd = {line,8096};
   read(w->fd, cmd.base, cmd.len);
   printf("line: %s\n",line);
-
-  pid_t child_pid;
-  child_pid = fork();
-  if ( !child_pid ) {
-    return;
-  } else {
-    char cmd[MAXPATHLEN];
-    snprintf(cmd, MAXPATHLEN, "%s", line);
-    system(cmd);
-  }
+  system(cmd.base);
+  ev_io_stop (loop, w);
 }
 
 void
