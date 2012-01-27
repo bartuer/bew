@@ -63,7 +63,7 @@ readdir_cb (eio_req *req)
        int fd = *((int*)req->data);
        free(req->data);
        evented_fd = NULL;
-       int count = remove_node(&dir_cluster[fd], q);
+       remove_node(&dir_cluster[fd], q);
        
        char update[MAXPATHLEN + 256];
        memset(update, 0, sizeof(update));

@@ -252,8 +252,13 @@ remove_node ( dir_node* p, dir_node* queue ) {
   assert(p == &dir_cluster[fd]);
   ev_io_stop(loop, &dir_watcher[fd]);
   ngx_queue_remove(p); 
-  assert(!empty_dir_node(p));
-  clean_dir_node(p);
+  /*
+     it is posssible subdir node remove before parent:
+     if subdir remove event arrive before parent dir remove event
+  */
+  if ( !empty_dir_node(p) ) {
+    clean_dir_node(p);    
+  }
   return 1;
 }
 

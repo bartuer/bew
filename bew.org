@@ -51,13 +51,11 @@
 
 
 
-
-
-* TODO fs pub [8/9]
+* TODO fs pub [11/15]
   SCHEDULED: <2012-01-17 Tue 13:30>
-  CLOCK: [2012-01-20 Fri 04:45]--[2012-01-20 Fri 05:04] =>  0:19
+  CLOCK: [2012-01-27 Fri 14:09]--[2012-01-27 Fri 14:19] =>  0:10
   :PROPERTIES:
-  :Clockhistory: 12
+  :Clockhistory: 15
   | :Clock1:  | [2012-01-17 Tue 13:22]--[2012-01-17 Tue 16:45] =>  3:23 | init              |   203 |
   | :Clock2:  | [2012-01-17 Tue 16:59]--[2012-01-17 Tue 18:05] =>  1:06 | cbt               |    66 |
   | :Clock3:  | [2012-01-17 Tue 19:08]--[2012-01-17 Tue 20:24] =>  1:16 | cbt               |    76 |
@@ -70,8 +68,11 @@
   | :Clock10: | [2012-01-20 Fri 02:00]--[2012-01-20 Fri 04:00] =>  2:00 | fix kqueue flags  |   120 |
   | :Clock11: | [2012-01-20 Fri 04:12]--[2012-01-20 Fri 04:45] =>  0:33 | fix nodes remove  |    33 |
   | :Clock12: | [2012-01-20 Fri 04:45]--[2012-01-20 Fri 05:04] =>  0:19 | fix nodes add     |    19 |
-  |           |                                                         |                   | 19.88 |
-  #+TBLFM: $4='(convert-time-to-minutes $2)::@13$4=vsum(@1..@12)/60;%.2f
+  | :Clock13: | [2012-01-20 Fri 16:50]--[2012-01-20 Fri 17:30] =>  0:40 | fix add report    |    40 |
+  | :Clock14: | [2012-01-21 Sat 10:48]--[2012-01-21 Sat 11:37] =>  0:49 | mkdir {b,c}       |    49 |
+  | :Clock15: | [2012-01-27 Fri 14:09]--[2012-01-27 Fri 14:19] =>  0:10 | remove fix        |    10 |
+  |           |                                                         |                   | 21.53 |
+  #+TBLFM: $4='(convert-time-to-minutes $2)::@16$4=vsum(@1..@15)/60;%.2f
   :Effort:   3:00
   :Commit:   (git-link "~/local/src/critbit" "3b1730351bf32f25cdf481b4ef6420cbe0864cef")
              (git-link "~/local/src/bew" "5e5c0f4c87e2a7ad0c9f80a7f05053900059162c")
@@ -90,5 +91,17 @@
   - [X] fix files notify
   - [X] fix remove subdir
   - [X] fix add subdir
-  - [ ] remove eio_readdir?
+  - [X] fix remove eio_readdir?
+        it works now
+  - [X] fix mkdir {b,c,d}
+        - one shot can not fix this
+          indeed there is no multiple messages sent out
+        - eio_readdir can work with readdir?
+        - can not insert second one
+        - fix ngx_queue_split can fix this
+  - [X] fix remove dir recursive
+  - [ ] fix oneshot and readd event
+  - [ ] fix report file delete
+  - [ ] fix detect file change finish
+  - [ ] fix mv to subdir
         
