@@ -79,13 +79,25 @@ struct ngx_queue_s {
 
 #endif
 
-#define ngx_queue_split(h, q, n)                                              \
-    (n)->prev = (h)->prev;                                                    \
-    (n)->prev->next = n;                                                      \
-    (n)->next = q;                                                            \
-    (h)->prev = (q)->prev;                                                    \
+/*
+   h : head
+   b : split begin
+   e : split end
+*/
+
+#define ngx_queue_split(h, b, e)                                              \
+  if (b == e) {                                                               \
+    ngx_queue_remove(b);                                                      \
+    (b)->next = b;                                                            \
+    (b)->prev = b;                                                            \
+  } else {                                                                    \
+    (e)->prev = (h)->prev;                                                    \
+    (e)->prev->next = e;                                                      \
+    (e)->next = b;                                                            \
+    (h)->prev = (b)->prev;                                                    \
     (h)->prev->next = h;                                                      \
-    (q)->prev = n;
+    (b)->prev = e;                                                            \
+  }
 
 
 #define ngx_queue_add(h, n)                                                   \
