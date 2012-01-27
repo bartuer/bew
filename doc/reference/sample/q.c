@@ -247,9 +247,6 @@ test_last ( ) {
 
   printf("split begin: %d\n",buf[2].v);
   printf("split   end: %d\n",buf[2].v);
-  /* ngx_queue_remove(&buf[2]); */
-  /* buf[2].next = &buf[2]; */
-  /* buf[2].prev = &buf[2]; */
   ngx_queue_split(q, &buf[2], &buf[2]);
 
   printf("\nsplit[0]:\n");
@@ -295,9 +292,9 @@ test_last ( ) {
 
 int main(int argc, char *argv[])
 {
-  /* test_10(); */
-  /* test_3(); */
-  /* test_2(); */
+  test_10();
+  test_3();
+  test_2();
   test_last();
   return 0;
 }
