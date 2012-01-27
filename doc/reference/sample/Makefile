@@ -69,7 +69,7 @@ q_test:q
 	./q
 
 q:q.c
-	$(CC) -I. -o q q.c
+	gcc -I. -ggdb -o q q.c
 
 check-syntax:
 	$(CC) $(SYNTAX_CHECK_FLAG) -I. -I$(LIBPATH)/libeio -I$(LIBPATH)/libev $(CHK_SOURCES)

@@ -79,6 +79,14 @@ struct ngx_queue_s {
 
 #endif
 
+/*
+   h : head
+   q : split begin
+   n : split end
+
+   can not handle queue only has 2 elements
+*/
+
 #define ngx_queue_split(h, q, n)                                              \
     (n)->prev = (h)->prev;                                                    \
     (n)->prev->next = n;                                                      \
