@@ -255,15 +255,21 @@ remove_nodes ( dir_node* root, dir_node* queue ) {
 
 unsigned int
 remove_node ( dir_node* p, dir_node* queue ) {
-  int fd = p - &dir_cluster[0];
-  assert(p == &dir_cluster[fd]);
-  ev_io_stop(loop, &dir_watcher[fd]);
-  ngx_queue_remove(p); 
-  /*
-     it is posssible subdir node remove before parent:
-     if subdir remove event arrive before parent dir remove event
-  */
   if ( !empty_dir_node(p) ) {
+    int fd = p - &dir_cluster[0];
+    assert(p == &dir_cluster[fd]);
+    ev_io_stop(loop, &dir_watcher[fd]);
+    ngx_queue_remove(p); 
+    /*
+      it is posssible subdir node remove before parent:
+      if subdir remove event arrive before parent dir remove event
+    */
+    char update[MAXPATHLEN + 256];
+    memset(update, 0, sizeof(update));
+    sprintf(update, "direvent remove subdir: %s\n", p->path);
+    printf("%s", update);
+    zstr_send(publisher, update);
+
     clean_dir_node(p);    
   }
   return 1;
@@ -298,10 +304,7 @@ check_queue ( dir_node* q ) {
   dir_node* p;
   ngx_queue_foreach(q, p){
     if ( empty_dir_node(p) ) {
-       printf("\nCHECK DIR_NODE QUEUE\n");
-       printf("count: %d\n",count);
-       printf("fd: %ld\n", p - &dir_cluster[0]);
-       /* abort(); */
+       printf("dir_cluster[%ld] empty!\n", p - &dir_cluster[0]);
     } else {
       count++;
     }

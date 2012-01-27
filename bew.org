@@ -51,11 +51,11 @@
 
 
 
-* TODO fs pub [11/15]
+* TODO fs pub [14/17]
   SCHEDULED: <2012-01-17 Tue 13:30>
-  CLOCK: [2012-01-27 Fri 14:09]--[2012-01-27 Fri 14:19] =>  0:10
+  CLOCK: [2012-01-27 Fri 22:36]
   :PROPERTIES:
-  :Clockhistory: 15
+  :Clockhistory: 16
   | :Clock1:  | [2012-01-17 Tue 13:22]--[2012-01-17 Tue 16:45] =>  3:23 | init              |   203 |
   | :Clock2:  | [2012-01-17 Tue 16:59]--[2012-01-17 Tue 18:05] =>  1:06 | cbt               |    66 |
   | :Clock3:  | [2012-01-17 Tue 19:08]--[2012-01-17 Tue 20:24] =>  1:16 | cbt               |    76 |
@@ -71,8 +71,9 @@
   | :Clock13: | [2012-01-20 Fri 16:50]--[2012-01-20 Fri 17:30] =>  0:40 | fix add report    |    40 |
   | :Clock14: | [2012-01-21 Sat 10:48]--[2012-01-21 Sat 11:37] =>  0:49 | mkdir {b,c}       |    49 |
   | :Clock15: | [2012-01-27 Fri 14:09]--[2012-01-27 Fri 14:19] =>  0:10 | remove fix        |    10 |
-  |           |                                                         |                   | 21.53 |
-  #+TBLFM: $4='(convert-time-to-minutes $2)::@16$4=vsum(@1..@15)/60;%.2f
+  | :Clock16: | [2012-01-27 Fri 14:20]--[2012-01-27 Fri 16:32] =>  2:12 | try fix oneshot   |   132 |
+  |           |                                                         |                   | 23.73 |
+  #+TBLFM: $4='(convert-time-to-minutes $2)::@17$4=vsum(@1..@16)/60;%.2f
   :Effort:   3:00
   :Commit:   (git-link "~/local/src/critbit" "3b1730351bf32f25cdf481b4ef6420cbe0864cef")
              (git-link "~/local/src/bew" "5e5c0f4c87e2a7ad0c9f80a7f05053900059162c")
@@ -100,8 +101,19 @@
         - can not insert second one
         - fix ngx_queue_split can fix this
   - [X] fix remove dir recursive
-  - [ ] fix oneshot and readd event
+  - [X] fix oneshot and readd event
+        - try dir_node cluster
+        - check_queue has race condition problem ? idle can resolve ?
+  - [X] fix add_nodes event
+  - [X] fix duplicate remove
+  - [ ] fix mv
+        - mkdir {b,c}; mv b c;
+        - mv c d;
+        - dir_node_rewind can not handle rename
   - [ ] fix report file delete
+        - it is possible report delete
+        - need remember all added file for delete
   - [ ] fix detect file change finish
-  - [ ] fix mv to subdir
+        - it is impossible report file change
+        - must add event handler to file
         

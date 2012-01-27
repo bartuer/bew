@@ -65,12 +65,6 @@ readdir_cb (eio_req *req)
       free(req->data);
       evented_fd = NULL;
       remove_node(&dir_cluster[fd], q);
-       
-      char update[MAXPATHLEN + 256];
-      memset(update, 0, sizeof(update));
-      sprintf(update, "direvent remove subdir: %s\n", req->ptr1);
-      printf("%s", update);
-      zstr_send(publisher, update);
     }
     return 0;
   }
@@ -118,7 +112,6 @@ readdir_cb (eio_req *req)
             son_ent = NULL;
           }
         }
-        assert(son_ent);
 
         /*
           try slow implement, up to 1k strcmp
@@ -143,6 +136,7 @@ readdir_cb (eio_req *req)
         }
 
         if ( has_not_included ) {
+          assert(son_ent);
           son = create_dir_node(son_ent, father, dir_cluster);
           assert(son);
           insert_nodes(son, father, dir_cluster, q);

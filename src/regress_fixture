@@ -7,6 +7,8 @@ sleep 1;
 # directory recursive remove
 rm -Rf /tmp/a/c/d/e/f/g
 sleep 1;
+rm -Rf /tmp/a/c
+sleep 1;
 # directory rename
 # directory move
 # file add
