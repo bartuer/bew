@@ -152,7 +152,7 @@ add_nodes (dir_node* root, dir_node* slot, dir_node* queue) {
        char update[MAXPATHLEN + 256];
        memset(update, 0, sizeof(update));
        sprintf(update, "direvent add subdir: %s\n", slot[fd].path);
-       printf("%s\n",update);
+       printf("%s",update);
        zstr_send(publisher, update);
 
        sum += add_nodes(node, slot, queue);
@@ -304,7 +304,8 @@ check_queue ( dir_node* q ) {
   dir_node* p;
   ngx_queue_foreach(q, p){
     if ( empty_dir_node(p) ) {
-       printf("dir_cluster[%ld] empty!\n", p - &dir_cluster[0]);
+       printf("dir_cluster[%ld]: empty!\n", p - &dir_cluster[0]);
+       count++;
     } else {
       count++;
     }
