@@ -3,6 +3,7 @@
 extern dir_node dir_cluster[MAXFDNUM];
 extern ev_io dir_watcher[MAXFDNUM];
 extern struct ev_loop* loop;
+extern void* publisher;
 
 int
 empty_dir_node ( dir_node* node ) {
@@ -29,7 +30,7 @@ create_root_dir_node (char* path, dir_node* slot) {
   
   node.dir_ent = current;
   node.dir_ptr = dirp;
-  node.parent = NULL;
+  node.parent = &node;
   /* add to queue maybe change these 2 pointer */
   node.next = NULL;
   node.prev = NULL;
@@ -148,6 +149,12 @@ add_nodes (dir_node* root, dir_node* slot, dir_node* queue) {
        ngx_queue_insert_tail(queue, &slot[fd]);
        assert(ngx_queue_last(queue));
        sum++;
+       char update[MAXPATHLEN + 256];
+       memset(update, 0, sizeof(update));
+       sprintf(update, "direvent add subdir: %s\n", slot[fd].path);
+       printf("%s\n",update);
+       zstr_send(publisher, update);
+
        sum += add_nodes(node, slot, queue);
     }
   }

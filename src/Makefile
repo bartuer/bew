@@ -7,9 +7,9 @@ SYNTAX_CHECK_FLAG=--analyze -fno-caret-diagnostics -fno-color-diagnostics -fno-s
 ZMQBASE=/Users/bartuer/local
 
 test:evio
-	mkdir -p /tmp/a/c
-	mkdir -p /tmp/a/b
-	cat regress_fixture | ./evio /tmp/a
+	rm -Rf /tmp/a/*
+	./evio /tmp/a &
+	sh ./regress_fixture
 
 evio_test:evio /tmp/evio
 	mkdir -p /tmp/evio/fail

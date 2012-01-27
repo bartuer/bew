@@ -1,6 +1,20 @@
-rm -Rf /tmp/a/*;
+# two dir node split
+mkdir -p /tmp/a/{b,c};
+sleep 1;
+# directory recusive add
 mkdir -p /tmp/a/{b,c}/d/e/f/{g,h,i,j}/{k,l};
+sleep 1;
+# directory recursive remove
+rm -Rf /tmp/a/c/d/e/f/g
+sleep 1;
+# directory rename
+# directory move
+# file add
 touch /tmp/a/b/file;
+sleep 1;
+# file change
 echo "content" > /tmp/a/b/file;
+sleep 1;
+# file remove
 rm /tmp/a/b/file;
-rm -Rf /tmp/a/b/d/e/f;
+

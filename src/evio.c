@@ -20,6 +20,7 @@
 
 dir_node dir_cluster[MAXFDNUM];
 ev_io dir_watcher[MAXFDNUM];
+void* publisher;
 struct ev_loop *loop;
 
 static char pwd[MAXPATHLEN];               /* path concat buffer pointer*/
@@ -31,7 +32,7 @@ static ev_timer timeout_watcher;
 static ev_idle repeat_watcher;
 static ev_async ready_watcher;
 static ev_io cmd_watcher;
-static void* publisher;
+
 
 int
 later_than(time_t time1, struct timespec time2)
@@ -130,31 +131,21 @@ readdir_cb (eio_req *req)
                 p->parent != NULL && p->parent != father->parent;
                 p = ngx_queue_next(p)) {
             if ( strcmp(pwd, p->path) == 0 ) {
-              printf("include p->path: %s\n",p->path);
+              /* printf("include p->path: %s\n",p->path); */
               has_not_included = 0;
               break;
+            } else {
+              /* printf("has  %s\n",p->path); */
             }
           }
         } else {
-          printf("father: %s no child\n", father->path);
+          /* printf("father: %s no child\n", father->path); */
         }
 
         if ( has_not_included ) {
           son = create_dir_node(son_ent, father, dir_cluster);
           assert(son);
-          int count = insert_nodes(son, father, dir_cluster, q);
-          int sum = 0;
-          dir_node* p;
-          for ( p = son;
-                p == son || (p->parent != NULL && p->parent != father);
-                p = ngx_queue_next(p), sum++ ) {
-            char update[MAXPATHLEN + 256];
-            memset(update, 0, sizeof(update));
-            sprintf(update, "direvent add subdir: %s\n", p->path);
-            printf("%s\n",update);
-            zstr_send(publisher, update);
-          }
-          assert(sum == count);
+          insert_nodes(son, father, dir_cluster, q);
         }
       } else {
         struct stat st;
@@ -213,6 +204,7 @@ cmd_cb (struct ev_loop *loop, ev_io *w, int revents)
   buf_t cmd = {line,8096};
   read(w->fd, cmd.base, cmd.len);
   printf("line: %s\n",line);
+  /* it will block whole event loop, so can not use as test facility */
   system(cmd.base);
   ev_io_stop (loop, w);
 }
@@ -223,7 +215,7 @@ dir_cb (EV_P_ ev_io *w, int revents)
   assert(revents == EV_LIBUV_KQUEUE_HACK);
 
   time(&now);
-  printf("\n\nEVENT dir_cluster[%d]: %s\n", w->fd, dir_cluster[w->fd].path);
+  printf("\nEVENT[%d]: %s\n", w->fd, dir_cluster[w->fd].path);
   evented_fd = malloc(sizeof(int));
   *evented_fd = w->fd;
   eio_readdir(dir_cluster[w->fd].path,
