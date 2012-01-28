@@ -106,8 +106,11 @@ readdir_cb (eio_req *req)
         if ( son_ent == NULL ) {
           printf("can not find %s in %s\n", name, father->path);
         }
+
         /*
           try slow implement, up to 1k strcmp
+          it is not accurate search, if right brother has very deep decent
+          it will search far more than necessary dir_nodes
           if it works, replace with cbt search implement, reduce to 1 strcmp
         */
         dir_node* p;
@@ -119,11 +122,9 @@ readdir_cb (eio_req *req)
             if ( strcmp(pwd, p->path) == 0 ) {
               has_not_included = 0;
               break;
-            } else {
             }
           }
-        } else {
-        }
+        } 
 
         if ( has_not_included ) {
           assert(son_ent);
