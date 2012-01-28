@@ -24,16 +24,26 @@ cbt_contains(cbt_tree *t, const char *u) {
 }
 
 int
-cbt_insert(cbt_tree *t, const char *u) {
+cbt_insert(cbt_tree *t, const char *u, void* value) {
   const uint8 *const ubytes = (void *) u;                                  /* insert into a empty tree */
   const size_t ulen = strlen(u);
   uint8 *p = t->root;
 
   if (!p) {
     char *x;
-    int a = posix_memalign((void **) &x, sizeof(void *), ulen + 1);
-    if (a) return 0;
+    int a = posix_memalign((void **) &x, sizeof(void *), ulen + 1 + sizeof(void*));
+    if (a) {
+      t->root = x;
+      return 0;
+    }
     memcpy(x, u, ulen + 1);
+    if ( value != NULL ) {
+      memset(x + ulen + 1, 0, sizeof(void *));
+      memcpy(x + ulen + 1, value, 1);
+    } else {
+      memset(x + ulen + 1, 0, sizeof(void *));
+    }
+
     t->root = x;
     return 2;
   }
@@ -77,14 +87,21 @@ cbt_insert(cbt_tree *t, const char *u) {
     return 0;
 
   char *x;
-  if (posix_memalign((void **) &x, sizeof(void *), ulen + 1)) {
+  if (posix_memalign((void **) &x, sizeof(void *), ulen + 1 + sizeof(void*))) {
     free(newnode);
     return 0;
   }
   memcpy(x, ubytes, ulen + 1);
+  if ( value != NULL ) {
+    memset(x + ulen + 1, 0, sizeof(void *));
+    memcpy(x + ulen + 1, value, 1);
+  } else {
+    memset(x + ulen + 1, 0, sizeof(void *));
+  }
   newnode->byte = newbyte;
   newnode->otherbits = newotherbits;
   newnode->child[1 - newdirection] = x;
+
 
   void **wherep = &t->root;                                                /* insert a new node into the tree */
   for (;;) {
@@ -162,8 +179,8 @@ cbt_clear(cbt_tree *t)
 
 static int
 allprefixed_traverse(uint8 *top,
-                     int (*handle) (const char *, void *), void *arg){
-  if (1 & (intptr_t) top) {                                                /* Deal with an internal node */
+                     int (*handle) (const char *, void *, void *), void *arg){
+  if (1 & (intptr_t) top) {                                               /* Deal with an internal node */
     cbt_node *q = (void *) (top - 1);
     for (int direction = 0; direction < 2; ++direction)
       switch(allprefixed_traverse(q->child[direction], handle, arg)){
@@ -174,12 +191,15 @@ allprefixed_traverse(uint8 *top,
     return 1;
   }
 
-  return handle((const char *) top, arg);                                  /* Deal with an external node */
+  void* value = NULL;
+  const char* key = (const char*)(top);
+  value = top + strlen(key) + 1;
+  return handle((const char *)top, value, arg);                           /* Deal with an external node */   
 }
 
 int
 cbt_allprefixed(cbt_tree *t, const char *prefix,
-                int (*handle) (const char *, void *), void *arg){
+                int (*handle) (const char *, void *, void *), void *arg){
   const uint8 *ubytes = (void *) prefix;
   const size_t ulen = strlen(prefix);
   uint8 *p = t->root;

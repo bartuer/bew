@@ -20,8 +20,8 @@ evio_memcheck:evio
 	touch /tmp/some.txt
 	valgrind --leak-check=yes ./evio /tmp
 
-evio:evio.o dir_node.o
-	$(CXX) -o evio evio.o dir_node.o $(LIBPATH)/libeio/.libs/libeio.a $(LIBPATH)/libev/.libs/libev.a -L$(ZMQBASE)/lib -lzmq -lczmq
+evio:evio.o dir_node.o cbt.o
+	$(CXX) -o evio evio.o dir_node.o cbt.o $(LIBPATH)/libeio/.libs/libeio.a $(LIBPATH)/libev/.libs/libev.a -L$(ZMQBASE)/lib -lzmq -lczmq
 
 evio.o:evio.c $(LIBEV) 
 	$(CC) -I$(LIBPATH)/libeio -I$(LIBPATH)/libev -I$(ZMQBASE)/include -c evio.c 
@@ -48,9 +48,12 @@ pub:pub.o
 pub.o:pub.c
 	$(CC) -c -O3 -I. -I$(ZMQBASE)/include pub.c -o pub.o
 
+
 dir_node.o:dir_node.c
 	$(CC) -c -I. -I$(LIBPATH)/libeio -I$(LIBPATH)/libev -o dir_node.o dir_node.c
 
+cbt.o:cbt.c
+	$(CC) -c -o cbt.o cbt.c
 
 check-syntax:
 	$(CC) -I$(ZMQBASE)/include $(SYNTAX_CHECK_FLAG) -I. -I$(LIBPATH)/libeio -I$(LIBPATH)/libev $(CHK_SOURCES)
