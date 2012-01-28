@@ -128,6 +128,7 @@
       that we treat strings as if they had an infinite number of NULs
       following them and that the best match string might be longer
       than u.
+      (link "cbt.c" 1712)
 
       While calculating the differing byte we also calculate
       newotherbits, the XOR of the differing byte. This will become
@@ -149,13 +150,13 @@
       any ones, this number is not a power of two and subtracting one
       will only alter the third part. Thus, in this case, x and x-1
       have at least one element in common:  the leading one.
-      (link "cbt.c" 2056)
+      (link "cbt.c" 2282)
 
       However, if the third part consists only of zeros then the
       number is a power of two. Also, subtracting one will result in
       clearing the bit in the second part and turning the third part
       to all ones. Thus the sets are disjoint and x & (x-1) is false.
-      (link "cbt.c" 2056)
+      (link "cbt.c" 2282)
 
       So, we have a test for finding values with only a single bit
       set. Now consider that, if the test fails, x & (x-1) must
@@ -168,7 +169,7 @@
 
       Once we have this value, we invert all the bits resulting in a
       value suitable for our otherbits member.
-      (link "cbt.c" 2131)
+      (link "cbt.c" 2372)
 *** Allocating a new node
 
     This is obviously fairly pedestrian code. Again, we use
@@ -176,7 +177,7 @@
     alignment of at least two. We store the new copy of the string
     into the correct child pointer and save the other for when we have
     worked out where to insert the new node
-    (link "cbt.c" 2343)
+    (link "cbt.c" 2468)
 
 *** Inserting a new node in the tree
 
@@ -226,13 +227,13 @@
   This function takes a tree, t, and a NUL terminated string, u, and
   possibly mutates the tree such that u not in t. It returns 1 if the
   tree was mutated, 0 otherwise.
-  (link "cbt.c" 3290)
+  (link "cbt.c" 3207)
 
 *** Deleting from the empty tree
 
     Since no element is the member of the empty tree, this is a very
     easy case: we can just return 0.
-    (link "cbt.c" 3522)
+    (link "cbt.c" 3714)
 
 *** Finding the best candidate to delete
 
@@ -241,7 +242,7 @@
     only exception is that we keep track of the last jump to an
     internal node in whereq. Actually, we keep track of a pointer to
     the last pointer that got us to an internal node.
-    (link "cbt.c" 3640)
+    (link "cbt.c" 4063)
 
     To see why, consider the typical case:
 
@@ -264,7 +265,7 @@
     a bump in the road - it should also be removed. Thus we need a
     pointer to the grandparent in order to remove both the string and
     the internal node that pointed to it.
-    (link "cbt.c" 3913)
+    (link "cbt.c" 4336)
 
 *** Checking that we have the right element
 
@@ -273,20 +274,20 @@
     have a match. If we don't, then the element cannot be in the tree
     and we can return 0. Otherwise, the external node is no longer
     useful and can be freed.
-    (link "cbt.c" 3970)
+    (link "cbt.c" 4393)
 
 *** Removing the node
 
     We now have to deal with two cases. The simple case is as outlined
     in the diagram above: we remove the parent node and point the
     grand parent to to other child of the parent.
-    (link "cbt.c" 4232)
+    (link "cbt.c" 4655)
 
     We also have to keep in mind that there might not be a grandparent
     node.  This is the case when the tree only has one element. In
     this case, we remove that element and set the root pointer to
     NULL.
-    (link "cbt.c" 4084)
+    (link "cbt.c" 4507)
 
 * Clearing a tree.
 
@@ -295,14 +296,14 @@
 
   So, the cbt_clear function takes a tree, t, and frees every member
   of it, mutating the tree such that it is empty on exit.
-  (link "cbt.c" 4610)
+  (link "cbt.c" 5033)
 
 *** Recursively clearing the tree
 
     Each pointer in the tree has to be tested to see if it's a pointer
     to an internal node (a cbt_node) or to a malloced string. If it's
     a node, we need to recursively free its children.
-    (link "cbt.c" 4343)
+    (link "cbt.c" 4766)
 
 * Fetching elements with a given prefix
 
@@ -320,7 +321,7 @@
     1 : successful
     2 : if handle returned a value not in [0,1]
   }
-  (link "cbt.c" 4678)
+  (link "cbt.c" 5801)
   (Note that, if handle returns 0, the iteration is aborted)
 
 *** Dealing with an internal node while recursing
@@ -337,7 +338,8 @@
     An external node is a malloced string that matches the given
     prefix. Thus we call the callback and we're done.
 
-    (link "cbt.c" 5167)
+    (link "cbt.c" 5694)
+
 *** Maintaining the top pointer
 
     The top pointer points to the internal node at the top of the
@@ -346,11 +348,11 @@
     the tree, this subtree exists (if the subset is non-empty) and can
     be detected by checking for the critbit advancing beyond the
     length of the prefix.
-    (link "cbt.c" 5613)
+    (link "cbt.c" 6143)
 
 *** Checking that the prefix exists
 
     As with our other functions, it's possible that the given prefix
     doesn't actually exist in the tree at this point. We need to check
     the actual contents of the external node that we have arrived at.
-    (link "cbt.c" 6063)
+    (link "cbt.c" 6580)
