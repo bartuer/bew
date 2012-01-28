@@ -45,15 +45,6 @@ later_than(time_t time1, struct timespec time2)
     return 1 ;
 }
 
-void
-eio_readdir_r(const char *path, int flags, int pri, eio_cb cb, int i)
-{
-  evented_fd = malloc(sizeof(int));
-  *evented_fd = i;
-  eio_readdir(dir_cluster[i].path, flags, pri, cb, evented_fd);
-  return;
-}
-
 int
 readdir_cb (eio_req *req)
 {
@@ -64,7 +55,7 @@ readdir_cb (eio_req *req)
       int fd = *((int*)req->data);
       free(req->data);
       evented_fd = NULL;
-      remove_node(&dir_cluster[fd], q);
+      remove_nodes(&dir_cluster[fd], q);
     }
     return 0;
   }
@@ -112,7 +103,9 @@ readdir_cb (eio_req *req)
             son_ent = NULL;
           }
         }
-
+        if ( son_ent == NULL ) {
+          printf("can not find %s in %s\n", name, father->path);
+        }
         /*
           try slow implement, up to 1k strcmp
           if it works, replace with cbt search implement, reduce to 1 strcmp
@@ -124,15 +117,12 @@ readdir_cb (eio_req *req)
                 p->parent != NULL && p->parent != father->parent;
                 p = ngx_queue_next(p)) {
             if ( strcmp(pwd, p->path) == 0 ) {
-              /* printf("include p->path: %s\n",p->path); */
               has_not_included = 0;
               break;
             } else {
-              /* printf("has  %s\n",p->path); */
             }
           }
         } else {
-          /* printf("father: %s no child\n", father->path); */
         }
 
         if ( has_not_included ) {
@@ -148,7 +138,7 @@ readdir_cb (eio_req *req)
         if (later_than(now, st.st_mtimespec) || later_than(now, st.st_ctimespec)) {
           char update[MAXPATHLEN + 256];
           memset(update, 0, sizeof(update));
-          sprintf(update, "direvent file change: %s/%s\n", req_data, name);
+          sprintf(update, "direvent file add: %s/%s\n", req_data, name);
           printf("%s", update);
           zstr_send(publisher, update);
         }
@@ -162,6 +152,8 @@ static void
 timeout_cb (EV_P_ ev_timer *w, int revents)
 {
   check_queue(q);
+  int count  = check_cbt("/private/tmp/a");
+  printf("cbt count: %d\n",count);
 }
 
 static void

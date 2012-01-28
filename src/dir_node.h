@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <unistd.h>
 #include <poll.h>
 #include <string.h>
@@ -54,4 +55,5 @@ unsigned int remove_node ( dir_node* p,
 void dir_node_rewind ( dir_node* node );
 int dump_queue ( dir_node* q , char* head_line );
 int check_queue ( dir_node* q);
+int check_cbt(const char* path);
 extern void dir_cb (EV_P_ ev_io *w, int revents);

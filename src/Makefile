@@ -32,7 +32,6 @@ evio.o:evio.c $(LIBEV)
 $(LIBEV):$(LIBEVPATH)/ev_kqueue.c $(LIBEVPATH)/ev.c $(LIBEVPATH)/ev_select.c
 	cd /Users/bartuer/local/src/bew/lib/libev; make
 
-
 sub_memcheck:sub
 	valgrind --leak-check=yes ./sub tcp://localhost:5556 10001 
 

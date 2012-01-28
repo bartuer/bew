@@ -1,9 +1,11 @@
 #include "dir_node.h"
+#include "cbt.h"
 
 extern dir_node dir_cluster[MAXFDNUM];
 extern ev_io dir_watcher[MAXFDNUM];
 extern struct ev_loop* loop;
 extern void* publisher;
+static cbt_tree cbt = {0};
 
 int
 empty_dir_node ( dir_node* node ) {
@@ -149,12 +151,12 @@ add_nodes (dir_node* root, dir_node* slot, dir_node* queue) {
        ngx_queue_insert_tail(queue, &slot[fd]);
        assert(ngx_queue_last(queue));
        sum++;
+       cbt_insert(&cbt, node->path, &fd);
        char update[MAXPATHLEN + 256];
        memset(update, 0, sizeof(update));
-       sprintf(update, "direvent add subdir: %s\n", slot[fd].path);
+       sprintf(update, "direvent add subdir: %s[%d]\n", slot[fd].path, fd);
        printf("%s",update);
        zstr_send(publisher, update);
-
        sum += add_nodes(node, slot, queue);
     }
   }
@@ -171,6 +173,7 @@ add_root_node ( char* path, dir_node* slot, dir_node* queue ) {
   ngx_queue_insert_head(queue, &dir_cluster[root_fd]);
   dir_node* root = ngx_queue_head(queue);
   assert(!ngx_queue_empty(queue));
+  cbt_insert(&cbt, root_node->path, &root_fd);
   return add_nodes(root, slot, queue);
 }
 
@@ -192,6 +195,7 @@ insert_nodes ( dir_node* root,     /* root of tree to be inserted*/
     root->parent = parent;
     ngx_queue_insert_tail(queue, &slot[root_fd]);
     sum++;
+    cbt_insert(&cbt, root->path, &root_fd);
     sum += add_nodes(root, slot, queue);
   } else {
     /* split queue */
@@ -209,6 +213,7 @@ insert_nodes ( dir_node* root,     /* root of tree to be inserted*/
     root->parent = parent;
     ngx_queue_insert_tail(queue, &slot[root_fd]);
     sum++;
+    cbt_insert(&cbt, root->path, &root_fd);
     sum += add_nodes(root, slot, queue);
     
     /* merge queue */
@@ -218,17 +223,39 @@ insert_nodes ( dir_node* root,     /* root of tree to be inserted*/
   return sum;
 }
 
+static int
+remove_nodes_cb ( const char *elem, void* value, void *arg ) {
+  if ( value == NULL ) {
+    return 0;
+  }
+
+  int fd  = *(int*)value;
+  dir_node* p = &dir_cluster[fd];
+  assert(p == &dir_cluster[fd]);
+  ev_io_stop(loop, &dir_watcher[fd]);
+  ngx_queue_remove(p); 
+  char update[MAXPATHLEN + 256];
+  memset(update, 0, sizeof(update));
+  sprintf(update, "direvent remove subdir: %s\n", elem);
+  printf("%s", update);
+  zstr_send(publisher, update);
+  if ( !empty_dir_node(&dir_cluster[fd]) ) {
+    clean_dir_node(p);        
+  }
+  cbt_delete(&cbt, elem);
+  return 1;
+}
+
 unsigned int
 remove_nodes ( dir_node* root, dir_node* queue ) {
   unsigned int sum = 0;
   dir_node* parent = root->parent;
   dir_node* p;
-  if ( parent == NULL ) {       /* topest */
+  if ( parent == root ) {       /* topest */
     ngx_queue_foreach(queue, p) {
       dir_node* r = p;
       int fd = r - &dir_cluster[0];
       assert(r == &dir_cluster[fd]);
-      /* this is bad fix,  should one dir one watcher*/
       ev_io_stop(loop, &dir_watcher[fd]);
       ngx_queue_remove(r); 
       if ( !empty_dir_node(&dir_cluster[fd]) ) {
@@ -237,18 +264,9 @@ remove_nodes ( dir_node* root, dir_node* queue ) {
       sum++;
     }
   } else {                      /* decent of topest */
-    for ( p = root;
-          p == root || (p->parent != NULL && p->parent != parent);
-          p = ngx_queue_next(p), sum++ ) {
-      int fd = p - &dir_cluster[0];
-      assert(p == &dir_cluster[fd]);
-      /* this is bad fix,  should one dir one watcher*/
-      ev_io_stop(loop, &dir_watcher[fd]);
-      ngx_queue_remove(p); 
-      if ( !empty_dir_node(&dir_cluster[fd]) ) {
-        clean_dir_node(p);        
-      }
-    } 
+    if ( cbt_contains(&cbt, root->path) ) {
+      cbt_allprefixed(&cbt, root->path, remove_nodes_cb, NULL);      
+    }
   }
   return sum;
 }
@@ -277,11 +295,12 @@ remove_node ( dir_node* p, dir_node* queue ) {
 
 void
 dir_node_rewind ( dir_node* node ) {
-  assert(!empty_dir_node(node));
-  DIR* dirp = node->dir_ptr;
-  assert(dirp);
-  assert(node->loc != 0);
-  seekdir(dirp, node->loc);
+  if ( !empty_dir_node(node) ) {
+    DIR* dirp = node->dir_ptr;
+    assert(dirp);
+    assert(node->loc != 0);
+    seekdir(dirp, node->loc);
+  }
 }
 
 int
@@ -314,5 +333,23 @@ check_queue ( dir_node* q ) {
     printf("watch count: %d\n",count);    
     total_dir_watcher = count;
   }
+  return count;
+}
+
+static int
+check_cb ( const char *elem, void* value, void *arg ) {
+   if ( value == NULL ) {
+    return 0;
+  }
+  (*((unsigned int *)arg))++;
+  int fd  = *(int*)value;
+  printf("%s [%d]\n", elem, fd);
+  return 1;
+}
+
+int
+check_cbt(const char* path) {
+  int count = 0;
+  cbt_allprefixed(&cbt, path, check_cb, &count);
   return count;
 }

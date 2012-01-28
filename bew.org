@@ -52,9 +52,9 @@
 
 * TODO fs pub [15/17]
   SCHEDULED: <2012-01-17 Tue 13:30>
-  CLOCK: [2012-01-28 Sat 16:03]
+  CLOCK: [2012-01-28 Sat 16:03]--[2012-01-28 Sat 16:37] =>  0:34
   :PROPERTIES:
-  :Clockhistory: 21
+  :Clockhistory: 23
   | :Clock1:  | [2012-01-17 Tue 13:22]--[2012-01-17 Tue 16:45] =>  3:23 | init                |   203 |
   | :Clock2:  | [2012-01-17 Tue 16:59]--[2012-01-17 Tue 18:05] =>  1:06 | cbt                 |    66 |
   | :Clock3:  | [2012-01-17 Tue 19:08]--[2012-01-17 Tue 20:24] =>  1:16 | cbt                 |    76 |
@@ -76,8 +76,10 @@
   | :Clock19: | [2012-01-28 Sat 07:49]--[2012-01-28 Sat 08:16] =>  0:27 | cbt need data field |    27 |
   | :Clock20: | [2012-01-28 Sat 11:09]--[2012-01-28 Sat 12:05] =>  0:56 | cbt map feature     |    56 |
   | :Clock21: | [2012-01-28 Sat 12:48]--[2012-01-28 Sat 16:01] =>  3:13 | cbt map feature     |   193 |
-  |           |                                                         |                     | 29.13 |
-  #+TBLFM: $4='(convert-time-to-minutes $2)::@22$4=vsum(@1..@21)/60;%.2f
+  | :Clock22: | [2012-01-28 Sat 16:03]--[2012-01-28 Sat 16:37] =>  0:34 | cbt merge           |    34 |
+  | :Clock23: | [2012-01-28 Sat 16:03]--[2012-01-28 Sat 16:37] =>  0:34 | rename works        |    34 |
+  |           |                                                         |                     | 30.27 |
+  #+TBLFM: $4='(convert-time-to-minutes $2)::@24$4=vsum(@1..@23)/60;%.2f
   :Effort:   3:00
   :Commit:   (git-link "~/local/src/critbit" "3b1730351bf32f25cdf481b4ef6420cbe0864cef")
              (git-link "~/local/src/bew" "5e5c0f4c87e2a7ad0c9f80a7f05053900059162c")
