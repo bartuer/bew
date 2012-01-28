@@ -5,7 +5,7 @@ extern dir_node dir_cluster[MAXFDNUM];
 extern ev_io dir_watcher[MAXFDNUM];
 extern struct ev_loop* loop;
 extern void* publisher;
-static cbt_tree cbt = {0};
+cbt_tree cbt = {0};
 
 int
 empty_dir_node ( dir_node* node ) {

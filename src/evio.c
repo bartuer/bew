@@ -15,6 +15,7 @@
 #include "eio.h"
 #include "ev.h"
 #include "dir_node.h"
+#include "cbt.h"
 #include "ngx-queue.h"
 
 
@@ -22,6 +23,7 @@ dir_node dir_cluster[MAXFDNUM];
 ev_io dir_watcher[MAXFDNUM];
 void* publisher;
 struct ev_loop *loop;
+extern cbt_tree cbt;
 
 static char pwd[MAXPATHLEN];               /* path concat buffer pointer*/
 static time_t now;                        /* current time */
@@ -107,26 +109,7 @@ readdir_cb (eio_req *req)
           printf("can not find %s in %s\n", name, father->path);
         }
 
-        /*
-          try slow implement, up to 1k strcmp
-          it is not accurate search, if right brother has very deep decent
-          it will search far more than necessary dir_nodes
-          if it works, replace with cbt search implement, reduce to 1 strcmp
-        */
-        dir_node* p;
-        int has_not_included = 1;
-        if ( !empty_dir_node(ngx_queue_next(father))) {
-          for ( p = ngx_queue_next(father);
-                p->parent != NULL && p->parent != father->parent;
-                p = ngx_queue_next(p)) {
-            if ( strcmp(pwd, p->path) == 0 ) {
-              has_not_included = 0;
-              break;
-            }
-          }
-        } 
-
-        if ( has_not_included ) {
+        if ( !cbt_contains(&cbt, pwd) ) {
           assert(son_ent);
           son = create_dir_node(son_ent, father, dir_cluster);
           assert(son);
@@ -135,14 +118,16 @@ readdir_cb (eio_req *req)
       } else {
         struct stat st;
         lstat(pwd, &st);
+        char update[MAXPATHLEN + 256];
+        memset(update, 0, sizeof(update));
 
         if (later_than(now, st.st_mtimespec) || later_than(now, st.st_ctimespec)) {
-          char update[MAXPATHLEN + 256];
-          memset(update, 0, sizeof(update));
           sprintf(update, "direvent file add: %s/%s\n", req_data, name);
-          printf("%s", update);
-          zstr_send(publisher, update);
+        } else {
+          sprintf(update, "direvent file deleted in  %s:\n", req_data);
         }
+        printf("%s", update);
+        zstr_send(publisher, update);
       }
     }
 
