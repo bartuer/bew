@@ -31,8 +31,7 @@ dir_node* create_root_dir_node (char* path,
                       dir_node* slot);
 dir_node* create_dir_node (struct dirent* entry,
                  dir_node* parent, 
-                 dir_node* slot
-                 );
+                 dir_node* slot);
 void dump_dir_node(dir_node* node);
 void clean_dir_node(dir_node* node);
 unsigned int add_root_node ( char* path,

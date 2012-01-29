@@ -174,11 +174,8 @@ insert_nodes ( dir_node* root,     /* root of tree to be inserted*/
                dir_node* parent,   /* inserted subtree's parent */
                dir_node* slot) {   /* operate on this heap */
   unsigned sum = 0;
-  /* find split point */
   assert(!empty_dir_node(root));
   assert(parent);
-
-  
 
   DIR* root_dirp = root->dir_ptr;
   int root_fd = dirfd(root_dirp);
