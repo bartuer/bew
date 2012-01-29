@@ -13,7 +13,6 @@
 #include <errno.h>
 #include "eio.h"
 #include "ev.h"
-#include "ngx-queue.h"
 
 #define MAXFDNUM 1024
 
@@ -39,21 +38,14 @@ dir_node* create_dir_node (struct dirent* entry,
 void dump_dir_node(dir_node* node);
 void clean_dir_node(dir_node* node);
 unsigned int add_root_node ( char* path,
-                             dir_node* slot,
-                             dir_node* queue );
+                             dir_node* slot);
 unsigned int add_nodes (dir_node* root,
-                        dir_node* slot,
-                        dir_node* queue);
+                        dir_node* slot);
 unsigned int insert_nodes ( dir_node* root,     
                             dir_node* parent,   
-                            dir_node* slot,     
-                            dir_node* queue );
-unsigned int remove_nodes ( dir_node* root,
-                            dir_node* queue );
-unsigned int remove_node ( dir_node* p,
-                           dir_node* queue );
+                            dir_node* slot);
+unsigned int remove_nodes ( dir_node* root);
+unsigned int remove_node ( dir_node* p);
 void dir_node_rewind ( dir_node* node );
-int dump_queue ( dir_node* q , char* head_line );
-int check_queue ( dir_node* q);
 int check_cbt(const char* path);
 extern void dir_cb (EV_P_ ev_io *w, int revents);

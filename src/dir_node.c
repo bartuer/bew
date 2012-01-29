@@ -138,7 +138,7 @@ void clean_dir_node(dir_node* node) {
 
 
 unsigned int
-add_nodes (dir_node* root, dir_node* slot, dir_node* queue) {
+add_nodes (dir_node* root, dir_node* slot) {
   struct dirent* ent;
   unsigned int sum = 0;
   while ( (ent = readdir(root->dir_ptr)) ) {
@@ -148,8 +148,7 @@ add_nodes (dir_node* root, dir_node* slot, dir_node* queue) {
        node = create_dir_node(ent, root, slot);
        assert(node);
        int fd = dirfd(node->dir_ptr);
-       ngx_queue_insert_tail(queue, &slot[fd]);
-       assert(ngx_queue_last(queue));
+
        sum++;
        cbt_insert(&cbt, node->path, &fd);
        char update[MAXPATHLEN + 256];
@@ -157,69 +156,40 @@ add_nodes (dir_node* root, dir_node* slot, dir_node* queue) {
        sprintf(update, "direvent add subdir: %s[%d]\n", slot[fd].path, fd);
        printf("%s",update);
        zstr_send(publisher, update);
-       sum += add_nodes(node, slot, queue);
+       sum += add_nodes(node, slot);
     }
   }
   return sum;
 }
 
 unsigned int
-add_root_node ( char* path, dir_node* slot, dir_node* queue ) {
+add_root_node ( char* path, dir_node* slot ) {
   unsigned int sum = 0;
   dir_node* root_node;
   root_node = create_root_dir_node(path, dir_cluster);
   assert(root_node);
   int root_fd = dirfd(root_node->dir_ptr);
-  ngx_queue_insert_head(queue, &dir_cluster[root_fd]);
-  dir_node* root = ngx_queue_head(queue);
-  assert(!ngx_queue_empty(queue));
   cbt_insert(&cbt, root_node->path, &root_fd);
-  return add_nodes(root, slot, queue);
+  return add_nodes(root_node, slot);
 }
 
 unsigned int
 insert_nodes ( dir_node* root,     /* root of tree to be inserted*/
                dir_node* parent,   /* inserted subtree's parent */
-               dir_node* slot,     /* operate on this heap */
-               dir_node* queue ) { /* the queue simulate directory tree */
+               dir_node* slot) {   /* operate on this heap */
   unsigned sum = 0;
   /* find split point */
   assert(!empty_dir_node(root));
   assert(parent);
-  dir_node* p = ngx_queue_next(parent);
-  assert(p);
-  
-  if (empty_dir_node(p)) { /* only parent in tree, can not split */
-    DIR* root_dirp = root->dir_ptr;
-    int root_fd = dirfd(root_dirp);
-    root->parent = parent;
-    ngx_queue_insert_tail(queue, &slot[root_fd]);
-    sum++;
-    cbt_insert(&cbt, root->path, &root_fd);
-    sum += add_nodes(root, slot, queue);
-  } else {
-    /* split queue */
-    dir_node* last = ngx_queue_last(queue);
-    ngx_queue_split(queue, p, last);
-    /* install head to splited one */
-    dir_node new;
-    dir_node* nq = &new;
-    ngx_queue_init(nq);
-    ngx_queue_insert_head(last, nq);
 
-    /* add nodes */
-    DIR* root_dirp = root->dir_ptr;
-    int root_fd = dirfd(root_dirp);
-    root->parent = parent;
-    ngx_queue_insert_tail(queue, &slot[root_fd]);
-    sum++;
-    cbt_insert(&cbt, root->path, &root_fd);
-    sum += add_nodes(root, slot, queue);
-    
-    /* merge queue */
-    ngx_queue_add(queue, nq);
-    memset(nq, 0, sizeof(new));
-  }
+  
+
+  DIR* root_dirp = root->dir_ptr;
+  int root_fd = dirfd(root_dirp);
+  root->parent = parent;
+  sum++;
+  cbt_insert(&cbt, root->path, &root_fd);
+  sum += add_nodes(root, slot);
   return sum;
 }
 
@@ -233,7 +203,6 @@ remove_nodes_cb ( const char *elem, void* value, void *arg ) {
   dir_node* p = &dir_cluster[fd];
   assert(p == &dir_cluster[fd]);
   ev_io_stop(loop, &dir_watcher[fd]);
-  ngx_queue_remove(p); 
   char update[MAXPATHLEN + 256];
   memset(update, 0, sizeof(update));
   sprintf(update, "direvent remove subdir: %s\n", elem);
@@ -247,37 +216,21 @@ remove_nodes_cb ( const char *elem, void* value, void *arg ) {
 }
 
 unsigned int
-remove_nodes ( dir_node* root, dir_node* queue ) {
+remove_nodes ( dir_node* root) {
   unsigned int sum = 0;
-  dir_node* parent = root->parent;
-  dir_node* p;
-  if ( parent == root ) {       /* topest */
-    ngx_queue_foreach(queue, p) {
-      dir_node* r = p;
-      int fd = r - &dir_cluster[0];
-      assert(r == &dir_cluster[fd]);
-      ev_io_stop(loop, &dir_watcher[fd]);
-      ngx_queue_remove(r); 
-      if ( !empty_dir_node(&dir_cluster[fd]) ) {
-        clean_dir_node(r);        
-      }
-      sum++;
-    }
-  } else {                      /* decent of topest */
-    if ( cbt_contains(&cbt, root->path) ) {
-      cbt_allprefixed(&cbt, root->path, remove_nodes_cb, NULL);      
-    }
+  if ( cbt_contains(&cbt, root->path) ) {
+    cbt_allprefixed(&cbt, root->path, remove_nodes_cb, NULL);      
   }
+
   return sum;
 }
 
 unsigned int
-remove_node ( dir_node* p, dir_node* queue ) {
+remove_node ( dir_node* p ) {
   if ( !empty_dir_node(p) ) {
     int fd = p - &dir_cluster[0];
     assert(p == &dir_cluster[fd]);
     ev_io_stop(loop, &dir_watcher[fd]);
-    ngx_queue_remove(p); 
     /*
       it is posssible subdir node remove before parent:
       if subdir remove event arrive before parent dir remove event
@@ -303,38 +256,7 @@ dir_node_rewind ( dir_node* node ) {
   }
 }
 
-int
-dump_queue ( dir_node* q , char* head_line ) {
-  printf("\n%s\n", head_line);
-  int count = 0;
-  dir_node* p;
-  ngx_queue_foreach(q, p){
-    dump_dir_node(p);
-    count++;
-  }
-  printf("count: %d\n",count);
-  return count;
-}
-
 static int total_dir_watcher = 0;
-int
-check_queue ( dir_node* q ) {
-  int count = 0;
-  dir_node* p;
-  ngx_queue_foreach(q, p){
-    if ( empty_dir_node(p) ) {
-       printf("dir_cluster[%ld]: empty!\n", p - &dir_cluster[0]);
-       count++;
-    } else {
-      count++;
-    }
-  }
-  if ( total_dir_watcher != count ) {
-    printf("watch count: %d\n",count);    
-    total_dir_watcher = count;
-  }
-  return count;
-}
 
 static int
 check_cb ( const char *elem, void* value, void *arg ) {
@@ -351,5 +273,8 @@ int
 check_cbt(const char* path) {
   int count = 0;
   cbt_allprefixed(&cbt, path, check_cb, &count);
+  if ( total_dir_watcher != count ) {
+    total_dir_watcher = count;
+  }
   return count;
 }

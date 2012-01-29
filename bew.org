@@ -122,9 +122,9 @@
         - remove_nodes need cbt
         - branch remove_node and remove_nodes in eio_readdir ?
           use remove_nodes only now
-* TODO fs dir pub [1/6]
+* TODO fs dir pub [2/6]
   SCHEDULED: <2012-01-29 Sun 10:00>
-  CLOCK: [2012-01-29 Sun 12:41]--[2012-01-29 Sun 14:35] =>  1:54
+  CLOCK: [2012-01-29 Sun 14:39]
   :PROPERTIES:
   :Effort:   8:00
   :Clockhistory: 2
@@ -139,9 +139,12 @@
           (link "~/local/src/bew/src/cbt.c" 1174)
         - cbt_clear
           memcheck fs dir pub 
-  - [ ] remove ngx_queue based tree
+  - [X] remove ngx_queue based tree
   - [ ] file watcher
   - [ ] cbt tree with file
+        - also add file
+        - remove_nodes filter
+        - larger dir_node array
   - [ ] fix report file delete
         - it is hard to report delete only listen on dir
         - remember all added files to report deleted file name

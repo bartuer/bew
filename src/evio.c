@@ -16,7 +16,6 @@
 #include "ev.h"
 #include "dir_node.h"
 #include "cbt.h"
-#include "ngx-queue.h"
 #include <pthread.h>
 
 
@@ -30,7 +29,6 @@ static char pwd[MAXPATHLEN];               /* path concat buffer pointer*/
 static time_t now;                        /* current time */
 static int* evented_fd;
 static dir_node empty_node;
-static dir_node* q;
 static ev_timer timeout_watcher;
 static ev_timer suicide_watcher;
 static ev_idle repeat_watcher;
@@ -59,7 +57,7 @@ readdir_cb (eio_req *req)
       int fd = *((int*)req->data);
       free(req->data);
       evented_fd = NULL;
-      remove_nodes(&dir_cluster[fd], q);
+      remove_nodes(&dir_cluster[fd]);
     }
     return 0;
   }
@@ -115,7 +113,7 @@ readdir_cb (eio_req *req)
           assert(son_ent);
           son = create_dir_node(son_ent, father, dir_cluster);
           assert(son);
-          insert_nodes(son, father, dir_cluster, q);
+          insert_nodes(son, father, dir_cluster);
         }
       } else {
         struct stat st;
@@ -137,8 +135,7 @@ readdir_cb (eio_req *req)
 static void
 timeout_cb (EV_P_ ev_timer *w, int revents)
 {
-  check_queue(q);
-  /* printf("cbt count: %d\n", check_cbt("/private/tmp/a")); */
+  printf("cbt count: %d\n", check_cbt("/private/tmp/a"));
 }
 
 static void
@@ -222,12 +219,6 @@ main (int argc, char**argv)
   /* map fd : path */
   memset(dir_cluster, 0, sizeof(dir_cluster));
 
-  /* queue to traverse paths as directory */
-  q = &empty_node;
-  memset(q, 0, sizeof(empty_node));
-  ngx_queue_init(q);
-  assert(ngx_queue_empty(q));
-
   loop = ev_loop_new (EVBACKEND_KQUEUE);
 
   if ( argv[2] ) {
@@ -243,7 +234,7 @@ main (int argc, char**argv)
   ev_timer_init (&timeout_watcher, timeout_cb, 1, 1.);
   ev_timer_start (loop, &timeout_watcher);
  
-  add_root_node(argv[1], dir_cluster, q);
+  add_root_node(argv[1], dir_cluster);
   
   ev_idle_init (&repeat_watcher, repeat);
 
