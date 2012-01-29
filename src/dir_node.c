@@ -34,8 +34,6 @@ create_root_dir_node (char* path, dir_node* slot) {
   node.dir_ptr = dirp;
   node.parent = &node;
   /* add to queue maybe change these 2 pointer */
-  node.next = NULL;
-  node.prev = NULL;
 
   char* d_name = current->d_name;
   char* root_path = realpath(path, d_name + 2);
@@ -60,8 +58,6 @@ create_dir_node (struct dirent* entry,
   assert(entry->d_type == DT_DIR);
   node.dir_ent = entry;
   node.parent = parent;
-  node.prev = NULL;
-  node.next = NULL;
   assert(node.parent->dir_ent);
 
   unsigned int namelen, p_namelen;

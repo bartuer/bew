@@ -23,8 +23,6 @@ struct dir_node_s {
   DIR*           dir_ptr;
   char*          path;
   dir_node*      parent;
-  dir_node*      next;
-  dir_node*      prev;
   long           loc;
 };
 
