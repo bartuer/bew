@@ -5,6 +5,7 @@
 #include <errno.h>
 #include "cbt.h"
 
+#define POINTER_SIZE 4
 int
 cbt_contains(cbt_tree *t, const char *u) {
   const uint8 *ubytes = (void *) u;
@@ -33,13 +34,12 @@ cbt_insert(cbt_tree *t, const char *u, void* value) {
     char *x;
     int a = posix_memalign((void **) &x, sizeof(void *), ulen + 1 + sizeof(void*));
     if (a) {
-      t->root = x;
       return 0;
     }
     memcpy(x, u, ulen + 1);
     if ( value != NULL ) {
       memset(x + ulen + 1, 0, sizeof(void *));
-      memcpy(x + ulen + 1, value, 1);
+      memcpy(x + ulen + 1, value, POINTER_SIZE);
     } else {
       memset(x + ulen + 1, 0, sizeof(void *));
     }
@@ -94,7 +94,7 @@ cbt_insert(cbt_tree *t, const char *u, void* value) {
   memcpy(x, ubytes, ulen + 1);
   if ( value != NULL ) {
     memset(x + ulen + 1, 0, sizeof(void *));
-    memcpy(x + ulen + 1, value, 1);
+    memcpy(x + ulen + 1, value, POINTER_SIZE);
   } else {
     memset(x + ulen + 1, 0, sizeof(void *));
   }
