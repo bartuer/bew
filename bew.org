@@ -124,18 +124,20 @@
           use remove_nodes only now
 * DONE fs dir/file pub [5/5]
   SCHEDULED: <2012-01-29 Sun 10:00>
+  CLOCK: [2012-01-29 Sun 16:52]--[2012-01-29 Sun 17:22] =>  0:30
   :PROPERTIES:
   :Effort:   8:00
-  :Clockhistory: 5
+  :Clockhistory: 6
   | :Clock1: | [2012-01-29 Sun 10:32]--[2012-01-29 Sun 12:32] =>  2:00 | init             |  120 |
   | :Clock2: | [2012-01-29 Sun 12:41]--[2012-01-29 Sun 14:35] =>  1:54 | setup test       |  114 |
   | :Clock3: | [2012-01-29 Sun 14:39]--[2012-01-29 Sun 15:23] =>  0:44 | remove ngx_queue |   44 |
   | :Clock4: | [2012-01-29 Sun 15:26]--[2012-01-29 Sun 16:09] =>  0:43 | report on file   |   43 |
   | :Clock5: | [2012-01-29 Sun 16:17]--[2012-01-29 Sun 16:37] =>  0:20 | finish           |   20 |
-  |          |                                                         |                  | 5.68 |
-  #+TBLFM: $4='(convert-time-to-minutes $2)::@6$4=vsum(@1..@5)/60;%.2f
+  | :Clock6: | [2012-01-29 Sun 16:52]--[2012-01-29 Sun 17:22] =>  0:30 | fix file event   |   30 |
+  |          |                                                         |                  | 6.18 |
+  #+TBLFM: $4='(convert-time-to-minutes $2)::@7$4=vsum(@1..@6)/60;%.2f
   :Commit:   (git-link "~/local/src/bew" "fs_dir_pub")
-             (git-link "~/local/src/bew" "")
+             (git-link "~/local/src/bew" "b740d999e5525679a06c5bb273f1c5129f259202")
   :END:
   - [X] fix cbt 
         - memcpy n should be sizeof(void *)?
