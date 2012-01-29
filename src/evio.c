@@ -144,7 +144,7 @@ readdir_cb (eio_req *req)
 static void
 timeout_cb (EV_P_ ev_timer *w, int revents)
 {
-  /* printf("cbt count: %d\n", check_cbt("/private/tmp/a")); */
+  printf("cbt count: %d\n", check_cbt("/private/tmp/a"));
 }
 
 static void
@@ -216,7 +216,7 @@ file_cb (EV_P_ ev_io *w, int revents)
     free(dir_cluster[w->fd].path);
     memset(&dir_cluster[w->fd], 0, sizeof(dir_node));
   } else {
-    sprintf(update, "direvent file add: %s\n", dir_cluster[w->fd].path);
+    sprintf(update, "direvent file change: %s\n", dir_cluster[w->fd].path);
   }
   printf("%s", update);
   zstr_send(publisher, update);

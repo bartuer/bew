@@ -119,9 +119,9 @@
         - remove_nodes need cbt
         - branch remove_node and remove_nodes in eio_readdir ?
           use remove_nodes only now
-* DONE fs dir/file pub [5/7]
+* DONE fs dir/file pub [6/7]
   SCHEDULED: <2012-01-29 Sun 10:00>
-  CLOCK: [2012-01-29 Sun 17:30]--[2012-01-29 Sun 18:19] =>  0:49
+  CLOCK: [2012-01-30 Mon 06:03]
   :PROPERTIES:
   :Effort:   8:00
   :Clockhistory: 7
@@ -153,5 +153,5 @@
         - add watcher when add
         - larger dir_node array
   - [X] remember added file watcher
-  - [ ] fix mkdir not report
   - [ ] fix event can not send out from dir_node.c
+        - add subdir

@@ -168,9 +168,8 @@ add_nodes (dir_node* root, dir_node* slot) {
         ev_io_init(&dir_watcher[fd], file_cb, fd, EV_LIBUV_KQUEUE_HACK);
         ev_io_start(loop, &dir_watcher[fd]);
         assert(empty_dir_node(&dir_cluster[fd]));
+        memset(&dir_cluster[fd], 0, sizeof(dir_node));
         dir_cluster[fd].path = path;
-        dir_cluster[fd].parent = NULL;
-        dir_cluster[fd].dir_ptr = NULL;
         cbt_insert(&cbt, path, &fd);
         char update[MAXPATHLEN + 256];
         memset(update, 0, sizeof(update));
@@ -193,6 +192,11 @@ add_root_node ( char* path, dir_node* slot ) {
   assert(root_node);
   int root_fd = dirfd(root_node->dir_ptr);
   cbt_insert(&cbt, root_node->path, &root_fd);
+  char update[MAXPATHLEN + 256];
+  memset(update, 0, sizeof(update));
+  sprintf(update, "direvent add subdir: %s[%d]\n", path, root_fd);
+  printf("%s", update);
+  zstr_send(publisher, update);
   return add_nodes(root_node, slot);
 }
 
@@ -209,6 +213,11 @@ insert_nodes ( dir_node* root,     /* root of tree to be inserted*/
   root->parent = parent;
   sum++;
   cbt_insert(&cbt, root->path, &root_fd);
+  char update[MAXPATHLEN + 256];
+  memset(update, 0, sizeof(update));
+  sprintf(update, "direvent add subdir: %s[%d]\n", root->path, root_fd);
+  printf("%s", update);
+  zstr_send(publisher, update);
   sum += add_nodes(root, slot);
   return sum;
 }
