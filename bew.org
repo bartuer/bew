@@ -122,17 +122,17 @@
         - remove_nodes need cbt
         - branch remove_node and remove_nodes in eio_readdir ?
           use remove_nodes only now
-* TODO fs dir pub [4/6]
+* TODO fs dir pub [4/4]
   SCHEDULED: <2012-01-29 Sun 10:00>
-  CLOCK: [2012-01-29 Sun 15:26]--[2012-01-29 Sun 16:09] =>  0:43
+  CLOCK: [2012-01-29 Sun 16:17]
   :PROPERTIES:
   :Effort:   8:00
   :Clockhistory: 4
   | :Clock1: | [2012-01-29 Sun 10:32]--[2012-01-29 Sun 12:32] =>  2:00 | init             |  120 |
   | :Clock2: | [2012-01-29 Sun 12:41]--[2012-01-29 Sun 14:35] =>  1:54 | setup test       |  114 |
   | :Clock3: | [2012-01-29 Sun 14:39]--[2012-01-29 Sun 15:23] =>  0:44 | remove ngx_queue |   44 |
-  | :Clock4: | [2012-01-29 Sun 15:26]--[2012-01-29 Sun 16:09] =>  0:43 | report on file   |      |
-  |          |                                                         |                  | 4.63 |
+  | :Clock4: | [2012-01-29 Sun 15:26]--[2012-01-29 Sun 16:09] =>  0:43 | report on file   |   43 |
+  |          |                                                         |                  | 5.35 |
   #+TBLFM: $4='(convert-time-to-minutes $2)::@5$4=vsum(@1..@4)/60;%.2f
   :END:
   - [X] fix cbt 
@@ -147,7 +147,7 @@
         - it is impossible report file change only listen on dir
         - try file watcher only watch new added file
         - allocate memory
-  - [ ] report on all files
+  - [X] report on all files
         - do not need insert file path into cbt
-        - add watcher when add_
+        - add watcher when add
         - larger dir_node array

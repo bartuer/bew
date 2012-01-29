@@ -46,3 +46,4 @@ unsigned int remove_node ( dir_node* p);
 void dir_node_rewind ( dir_node* node );
 int check_cbt(const char* path);
 extern void dir_cb (EV_P_ ev_io *w, int revents);
+extern void file_cb (EV_P_ ev_io *w, int revents);

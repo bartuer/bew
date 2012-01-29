@@ -140,19 +140,41 @@ add_nodes (dir_node* root, dir_node* slot) {
   while ( (ent = readdir(root->dir_ptr)) ) {
     assert(ent);
     if ( ent->d_type == DT_DIR  ) {
-       dir_node* node;
-       node = create_dir_node(ent, root, slot);
-       assert(node);
-       int fd = dirfd(node->dir_ptr);
+      dir_node* node;
+      node = create_dir_node(ent, root, slot);
+      assert(node);
+      int fd = dirfd(node->dir_ptr);
 
-       sum++;
-       cbt_insert(&cbt, node->path, &fd);
-       char update[MAXPATHLEN + 256];
-       memset(update, 0, sizeof(update));
-       sprintf(update, "direvent add subdir: %s[%d]\n", slot[fd].path, fd);
-       printf("%s",update);
-       zstr_send(publisher, update);
-       sum += add_nodes(node, slot);
+      sum++;
+      cbt_insert(&cbt, node->path, &fd);
+      char update[MAXPATHLEN + 256];
+      memset(update, 0, sizeof(update));
+      sprintf(update, "direvent add subdir: %s[%d]\n", slot[fd].path, fd);
+      printf("%s",update);
+      zstr_send(publisher, update);
+      sum += add_nodes(node, slot);
+    } else {
+      unsigned int namelen, p_namelen;
+      char * d_name = ent->d_name;
+      char * p_name = root->path;
+      namelen = strlen(d_name);
+      p_namelen = strlen(p_name);
+      char* path = NULL;
+      path = malloc(namelen + p_namelen + 2);
+      assert(path);
+      sprintf(path, "%s/%s", p_name, d_name);
+      int fd = open(path, O_NONBLOCK|O_RDONLY|O_CLOEXEC);
+      ev_io_init(&dir_watcher[fd], file_cb, fd, EV_LIBUV_KQUEUE_HACK);
+      ev_io_start(loop, &dir_watcher[fd]);
+      assert(empty_dir_node(&dir_cluster[fd]));
+      dir_cluster[fd].path = path;
+      dir_cluster[fd].parent = NULL;
+      dir_cluster[fd].dir_ptr = NULL;
+      char update[MAXPATHLEN + 256];
+      memset(update, 0, sizeof(update));
+      sprintf(update, "direvent file add: %s\n", path);
+      printf("%s", update);
+      zstr_send(publisher, update);
     }
   }
   return sum;
