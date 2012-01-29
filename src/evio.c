@@ -35,6 +35,14 @@ static ev_idle repeat_watcher;
 static ev_async ready_watcher;
 static ev_io cmd_watcher;
 
+void
+z_dir ( char* path, char* sub) {
+  char update[MAXPATHLEN + 256];
+  memset(update, 0, sizeof(update));
+  sprintf(update, "direvent %s: %s\n", sub, path);
+  printf("%s", update);
+  zstr_send(publisher, update);
+}
 
 int
 later_than(time_t time1, struct timespec time2)
@@ -126,14 +134,9 @@ readdir_cb (eio_req *req)
             ev_io_init(&dir_watcher[fd], file_cb, fd, EV_LIBUV_KQUEUE_HACK);
             ev_io_start(loop, &dir_watcher[fd]);
             assert(empty_dir_node(&dir_cluster[fd]));
+            memset(&dir_cluster[fd], 0, sizeof(dir_node));
             dir_cluster[fd].path = strdup(pwd);
-            dir_cluster[fd].parent = NULL;
-            dir_cluster[fd].dir_ptr = NULL;
-            char update[MAXPATHLEN + 256];
-            memset(update, 0, sizeof(update));
-            sprintf(update, "direvent file add: %s/%s\n", req_data, name);
-            printf("%s", update);
-            zstr_send(publisher, update);
+            z_dir(pwd, "file add");
           }
         }
       }

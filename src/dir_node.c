@@ -147,11 +147,7 @@ add_nodes (dir_node* root, dir_node* slot) {
 
       sum++;
       cbt_insert(&cbt, node->path, &fd);
-      char update[MAXPATHLEN + 256];
-      memset(update, 0, sizeof(update));
-      sprintf(update, "direvent add subdir: %s[%d]\n", slot[fd].path, fd);
-      printf("%s",update);
-      zstr_send(publisher, update);
+      z_dir(slot[fd].path, "add subdir");
       sum += add_nodes(node, slot);
     } else {
       unsigned int namelen, p_namelen;
@@ -171,11 +167,7 @@ add_nodes (dir_node* root, dir_node* slot) {
         memset(&dir_cluster[fd], 0, sizeof(dir_node));
         dir_cluster[fd].path = path;
         cbt_insert(&cbt, path, &fd);
-        char update[MAXPATHLEN + 256];
-        memset(update, 0, sizeof(update));
-        sprintf(update, "direvent file add: %s\n", path);
-        printf("%s", update);
-        zstr_send(publisher, update);
+        z_dir(path, "file add");
       } else {
         free(path);
       }
@@ -192,11 +184,7 @@ add_root_node ( char* path, dir_node* slot ) {
   assert(root_node);
   int root_fd = dirfd(root_node->dir_ptr);
   cbt_insert(&cbt, root_node->path, &root_fd);
-  char update[MAXPATHLEN + 256];
-  memset(update, 0, sizeof(update));
-  sprintf(update, "direvent add subdir: %s[%d]\n", path, root_fd);
-  printf("%s", update);
-  zstr_send(publisher, update);
+  z_dir(path, "add subdir");
   return add_nodes(root_node, slot);
 }
 
@@ -213,11 +201,7 @@ insert_nodes ( dir_node* root,     /* root of tree to be inserted*/
   root->parent = parent;
   sum++;
   cbt_insert(&cbt, root->path, &root_fd);
-  char update[MAXPATHLEN + 256];
-  memset(update, 0, sizeof(update));
-  sprintf(update, "direvent add subdir: %s[%d]\n", root->path, root_fd);
-  printf("%s", update);
-  zstr_send(publisher, update);
+  z_dir(root->path, "add subdir");
   sum += add_nodes(root, slot);
   return sum;
 }
@@ -236,11 +220,7 @@ remove_nodes_cb ( const char *elem, void* value, void *arg ) {
     return 0;
   }
   ev_io_stop(loop, &dir_watcher[fd]);
-  char update[MAXPATHLEN + 256];
-  memset(update, 0, sizeof(update));
-  sprintf(update, "direvent remove subdir: %s\n", elem);
-  printf("%s", update);
-  zstr_send(publisher, update);
+  z_dir(elem, "remove subdir");
   if ( !empty_dir_node(&dir_cluster[fd]) ) {
     clean_dir_node(p);        
   }
@@ -268,12 +248,7 @@ remove_node ( dir_node* p ) {
       it is posssible subdir node remove before parent:
       if subdir remove event arrive before parent dir remove event
     */
-    char update[MAXPATHLEN + 256];
-    memset(update, 0, sizeof(update));
-    sprintf(update, "direvent remove subdir: %s\n", p->path);
-    printf("%s", update);
-    zstr_send(publisher, update);
-
+    z_dir(p->path, "remove subdir");
     clean_dir_node(p);    
   }
   return 1;
