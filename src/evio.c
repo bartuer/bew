@@ -17,6 +17,7 @@
 #include "dir_node.h"
 #include "cbt.h"
 #include "ngx-queue.h"
+#include <pthread.h>
 
 
 dir_node dir_cluster[MAXFDNUM];
@@ -31,6 +32,7 @@ static int* evented_fd;
 static dir_node empty_node;
 static dir_node* q;
 static ev_timer timeout_watcher;
+static ev_timer suicide_watcher;
 static ev_idle repeat_watcher;
 static ev_async ready_watcher;
 static ev_io cmd_watcher;
@@ -118,16 +120,14 @@ readdir_cb (eio_req *req)
       } else {
         struct stat st;
         lstat(pwd, &st);
-        char update[MAXPATHLEN + 256];
-        memset(update, 0, sizeof(update));
-
         if (later_than(now, st.st_mtimespec) || later_than(now, st.st_ctimespec)) {
+          char update[MAXPATHLEN + 256];
+          memset(update, 0, sizeof(update));
           sprintf(update, "direvent file add: %s/%s\n", req_data, name);
-        } else {
-          sprintf(update, "direvent file deleted in  %s:\n", req_data);
+          printf("%s", update);
+          zstr_send(publisher, update);
+
         }
-        printf("%s", update);
-        zstr_send(publisher, update);
       }
     }
 
@@ -138,8 +138,13 @@ static void
 timeout_cb (EV_P_ ev_timer *w, int revents)
 {
   check_queue(q);
-  int count  = check_cbt("/private/tmp/a");
-  printf("cbt count: %d\n",count);
+  /* printf("cbt count: %d\n", check_cbt("/private/tmp/a")); */
+}
+
+static void
+suicide_cb (EV_P_ ev_timer *w, int revents)
+{
+  ev_break (EV_A_ EVBREAK_ONE);
 }
 
 static void
@@ -167,17 +172,23 @@ typedef struct {
   size_t len;
 } buf_t;
 
+
 static void
 cmd_cb (struct ev_loop *loop, ev_io *w, int revents)
 {
-
   char line[8096];
   memset(line, 0, 8096);
   buf_t cmd = {line,8096};
   read(w->fd, cmd.base, cmd.len);
   printf("line: %s\n",line);
-  /* it will block whole event loop, so can not use as test facility */
-  system(cmd.base);
+  pthread_t t;
+  pthread_create(&t, NULL, (void *)system, (void *)line);
+  pthread_detach(t);
+  /*
+     now in test mode, suicide after 15 seconds
+  */
+  ev_timer_init (&suicide_watcher, suicide_cb, 15, 0.);
+  ev_timer_start (loop, &suicide_watcher);
   ev_io_stop (loop, w);
 }
 
@@ -219,6 +230,13 @@ main (int argc, char**argv)
 
   loop = ev_loop_new (EVBACKEND_KQUEUE);
 
+  if ( argv[2] ) {
+    int seconds = atoi(argv[2]);
+    assert(seconds > 10);
+    ev_timer_init (&suicide_watcher, suicide_cb, seconds, 0.);
+    ev_timer_start (loop, &suicide_watcher);
+  }
+  
   ev_io_init (&cmd_watcher, cmd_cb, 0, EV_READ);
   ev_io_start (loop, &cmd_watcher);
 
@@ -237,7 +255,7 @@ main (int argc, char**argv)
   };
   
   ev_run (loop, 0);
-
+  cbt_clear(&cbt);
   zmq_close (publisher);
   zmq_term (context);
   return 0;

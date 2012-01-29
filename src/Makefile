@@ -10,15 +10,12 @@ test:evio
 	rm -Rf /tmp/a/*
 	./evio /tmp/a &
 	sh ./regress_fixture
-
-evio_test:evio /tmp/evio
-	mkdir -p /tmp/evio/fail
-	echo 'touch `mktemp -d /tmp/evio/XX`/test' |./evio /tmp/evio 
-	echo 'touch `mktemp -d /tmp/evio/fail/XX`/test' |./evio /tmp/evio
+	@echo #./evio /tmp/a < regress_fixture
 
 evio_memcheck:evio
-	touch /tmp/some.txt
-	valgrind --leak-check=yes ./evio /tmp
+	rm -Rf /tmp/a/*
+	valgrind --dsymutil=yes --leak-check=yes --track-fds=yes ./evio /tmp/a 15 
+	sh ./regress_fixture
 
 evio:evio.o dir_node.o cbt.o
 	$(CXX) -o evio evio.o dir_node.o cbt.o $(LIBPATH)/libeio/.libs/libeio.a $(LIBPATH)/libev/.libs/libev.a -L$(ZMQBASE)/lib -lzmq -lczmq

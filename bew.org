@@ -50,36 +50,38 @@
     
 
 
-* TODO fs pub [16/17]
+* DONE fs dir pub [15/15]
   SCHEDULED: <2012-01-17 Tue 13:30>
-  CLOCK: [2012-01-28 Sat 21:50]
+  CLOCK: [2012-01-28 Sat 22:27]--[2012-01-28 Sat 22:37] =>  0:10
   :PROPERTIES:
-  :Clockhistory: 23
-  | :Clock1:  | [2012-01-17 Tue 13:22]--[2012-01-17 Tue 16:45] =>  3:23 | init                |   203 |
-  | :Clock2:  | [2012-01-17 Tue 16:59]--[2012-01-17 Tue 18:05] =>  1:06 | cbt                 |    66 |
-  | :Clock3:  | [2012-01-17 Tue 19:08]--[2012-01-17 Tue 20:24] =>  1:16 | cbt                 |    76 |
-  | :Clock4:  | [2012-01-18 Wed 06:55]--[2012-01-18 Wed 08:45] =>  1:50 | cbt                 |   110 |
-  | :Clock5:  | [2012-01-18 Wed 10:34]--[2012-01-18 Wed 13:28] =>  2:54 | cbt                 |   174 |
-  | :Clock6:  | [2012-01-18 Wed 16:20]--[2012-01-18 Wed 18:23] =>  2:03 | cbt                 |   123 |
-  | :Clock7:  | [2012-01-18 Wed 22:44]--[2012-01-18 Wed 23:59] =>  1:15 | eio + dir_node      |    75 |
-  | :Clock8:  | [2012-01-18 Wed 23:59]--[2012-01-19 Thu 02:18] =>  2:19 | eio + remove node   |   139 |
-  | :Clock9:  | [2012-01-19 Thu 02:21]--[2012-01-19 Thu 03:16] =>  0:55 | eio + insert node   |    55 |
-  | :Clock10: | [2012-01-20 Fri 02:00]--[2012-01-20 Fri 04:00] =>  2:00 | fix kqueue flags    |   120 |
-  | :Clock11: | [2012-01-20 Fri 04:12]--[2012-01-20 Fri 04:45] =>  0:33 | fix nodes remove    |    33 |
-  | :Clock12: | [2012-01-20 Fri 04:45]--[2012-01-20 Fri 05:04] =>  0:19 | fix nodes add       |    19 |
-  | :Clock13: | [2012-01-20 Fri 16:50]--[2012-01-20 Fri 17:30] =>  0:40 | fix add report      |    40 |
-  | :Clock14: | [2012-01-21 Sat 10:48]--[2012-01-21 Sat 11:37] =>  0:49 | mkdir {b,c}         |    49 |
-  | :Clock15: | [2012-01-27 Fri 14:09]--[2012-01-27 Fri 14:19] =>  0:10 | remove fix          |    10 |
-  | :Clock16: | [2012-01-27 Fri 14:20]--[2012-01-27 Fri 16:32] =>  2:12 | try fix oneshot     |   132 |
-  | :Clock17: | [2012-01-27 Fri 22:36]--[2012-01-27 Fri 23:01] =>  0:25 | move                |    25 |
-  | :Clock18: | [2012-01-27 Fri 23:43]--[2012-01-28 Sat 00:06] =>  0:23 | rename implement    |    23 |
-  | :Clock19: | [2012-01-28 Sat 07:49]--[2012-01-28 Sat 08:16] =>  0:27 | cbt need data field |    27 |
-  | :Clock20: | [2012-01-28 Sat 11:09]--[2012-01-28 Sat 12:05] =>  0:56 | cbt map feature     |    56 |
-  | :Clock21: | [2012-01-28 Sat 12:48]--[2012-01-28 Sat 16:01] =>  3:13 | cbt map feature     |   193 |
-  | :Clock22: | [2012-01-28 Sat 16:03]--[2012-01-28 Sat 16:37] =>  0:34 | cbt merge           |    34 |
-  | :Clock23: | [2012-01-28 Sat 16:03]--[2012-01-28 Sat 16:37] =>  0:34 | rename works        |    34 |
-  |           |                                                         |                     | 30.27 |
-  #+TBLFM: $4='(convert-time-to-minutes $2)::@24$4=vsum(@1..@23)/60;%.2f
+  :Clockhistory: 25
+  | :Clock1:  | [2012-01-17 Tue 13:22]--[2012-01-17 Tue 16:45] =>  3:23 | init                     |   203 |
+  | :Clock2:  | [2012-01-17 Tue 16:59]--[2012-01-17 Tue 18:05] =>  1:06 | cbt                      |    66 |
+  | :Clock3:  | [2012-01-17 Tue 19:08]--[2012-01-17 Tue 20:24] =>  1:16 | cbt                      |    76 |
+  | :Clock4:  | [2012-01-18 Wed 06:55]--[2012-01-18 Wed 08:45] =>  1:50 | cbt                      |   110 |
+  | :Clock5:  | [2012-01-18 Wed 10:34]--[2012-01-18 Wed 13:28] =>  2:54 | cbt                      |   174 |
+  | :Clock6:  | [2012-01-18 Wed 16:20]--[2012-01-18 Wed 18:23] =>  2:03 | cbt                      |   123 |
+  | :Clock7:  | [2012-01-18 Wed 22:44]--[2012-01-18 Wed 23:59] =>  1:15 | eio + dir_node           |    75 |
+  | :Clock8:  | [2012-01-18 Wed 23:59]--[2012-01-19 Thu 02:18] =>  2:19 | eio + remove node        |   139 |
+  | :Clock9:  | [2012-01-19 Thu 02:21]--[2012-01-19 Thu 03:16] =>  0:55 | eio + insert node        |    55 |
+  | :Clock10: | [2012-01-20 Fri 02:00]--[2012-01-20 Fri 04:00] =>  2:00 | fix kqueue flags         |   120 |
+  | :Clock11: | [2012-01-20 Fri 04:12]--[2012-01-20 Fri 04:45] =>  0:33 | fix nodes remove         |    33 |
+  | :Clock12: | [2012-01-20 Fri 04:45]--[2012-01-20 Fri 05:04] =>  0:19 | fix nodes add            |    19 |
+  | :Clock13: | [2012-01-20 Fri 16:50]--[2012-01-20 Fri 17:30] =>  0:40 | fix add report           |    40 |
+  | :Clock14: | [2012-01-21 Sat 10:48]--[2012-01-21 Sat 11:37] =>  0:49 | mkdir {b,c}              |    49 |
+  | :Clock15: | [2012-01-27 Fri 14:09]--[2012-01-27 Fri 14:19] =>  0:10 | remove fix               |    10 |
+  | :Clock16: | [2012-01-27 Fri 14:20]--[2012-01-27 Fri 16:32] =>  2:12 | try fix oneshot          |   132 |
+  | :Clock17: | [2012-01-27 Fri 22:36]--[2012-01-27 Fri 23:01] =>  0:25 | move                     |    25 |
+  | :Clock18: | [2012-01-27 Fri 23:43]--[2012-01-28 Sat 00:06] =>  0:23 | rename implement         |    23 |
+  | :Clock19: | [2012-01-28 Sat 07:49]--[2012-01-28 Sat 08:16] =>  0:27 | cbt need data field      |    27 |
+  | :Clock20: | [2012-01-28 Sat 11:09]--[2012-01-28 Sat 12:05] =>  0:56 | cbt map feature          |    56 |
+  | :Clock21: | [2012-01-28 Sat 12:48]--[2012-01-28 Sat 16:01] =>  3:13 | cbt map feature          |   193 |
+  | :Clock22: | [2012-01-28 Sat 16:03]--[2012-01-28 Sat 16:37] =>  0:34 | cbt merge                |    34 |
+  | :Clock23: | [2012-01-28 Sat 16:03]--[2012-01-28 Sat 16:37] =>  0:34 | rename works             |    34 |
+  | :Clock24: | [2012-01-28 Sat 21:50]--[2012-01-28 Sat 22:12] =>  0:22 | fix add search           |    22 |
+  | :Clock25: | [2012-01-28 Sat 22:27]--[2012-01-28 Sat 22:37] =>  0:10 | split dir and file apart |    10 |
+  |           |                                                         |                          | 30.80 |
+  #+TBLFM: $4='(convert-time-to-minutes $2)::@26$4=vsum(@1..@25)/60;%.2f
   :Effort:   3:00
   :Commit:   (git-link "~/local/src/critbit" "3b1730351bf32f25cdf481b4ef6420cbe0864cef")
              (git-link "~/local/src/bew" "5e5c0f4c87e2a7ad0c9f80a7f05053900059162c")
@@ -120,9 +122,30 @@
         - remove_nodes need cbt
         - branch remove_node and remove_nodes in eio_readdir ?
           use remove_nodes only now
-  - [X] fix report file delete
-        - it is possible report delete
-        - need remember all added files for report deleted file name
-  - [ ] fix detect file modify finish
+* TODO fs dir pub [1/6]
+  SCHEDULED: <2012-01-29 Sun 10:00>
+  CLOCK: [2012-01-29 Sun 12:41]--[2012-01-29 Sun 14:35] =>  1:54
+  :PROPERTIES:
+  :Effort:   8:00
+  :Clockhistory: 2
+  | :Clock1: | [2012-01-29 Sun 10:32]--[2012-01-29 Sun 12:32] =>  2:00 | init       |  120 |
+  | :Clock2: | [2012-01-29 Sun 12:41]--[2012-01-29 Sun 14:35] =>  1:54 | setup test |  114 |
+  |          |                                                         |            | 3.90 |
+  #+TBLFM: $4='(convert-time-to-minutes $2)::@3$4=vsum(@1..@2)/60;%.2f
+  :END:
+  - [X] fix cbt 
+        - memcpy n should be sizeof(void *)?
+        - logic
+          (link "~/local/src/bew/src/cbt.c" 1174)
+        - cbt_clear
+          memcheck fs dir pub 
+  - [ ] remove ngx_queue based tree
+  - [ ] file watcher
+  - [ ] cbt tree with file
+  - [ ] fix report file delete
+        - it is hard to report delete only listen on dir
+        - remember all added files to report deleted file name
+        - or add file watcher ?
+  - [ ] detect file modify finish
         - it is impossible report file change
         - must add event handler to file
