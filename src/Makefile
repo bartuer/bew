@@ -9,7 +9,7 @@ ZMQBASE=/Users/bartuer/local
 test:evio
 	rm -Rf /tmp/a/*
 	./evio /tmp/a &
-	sh ./file_regress_fixture
+	sh ./regress_fixture
 	@echo #./evio /tmp/a < regress_fixture
 
 evio_memcheck:evio

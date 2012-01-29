@@ -163,18 +163,23 @@ add_nodes (dir_node* root, dir_node* slot) {
       path = malloc(namelen + p_namelen + 2);
       assert(path);
       sprintf(path, "%s/%s", p_name, d_name);
-      int fd = open(path, O_NONBLOCK|O_RDONLY|O_CLOEXEC);
-      ev_io_init(&dir_watcher[fd], file_cb, fd, EV_LIBUV_KQUEUE_HACK);
-      ev_io_start(loop, &dir_watcher[fd]);
-      assert(empty_dir_node(&dir_cluster[fd]));
-      dir_cluster[fd].path = path;
-      dir_cluster[fd].parent = NULL;
-      dir_cluster[fd].dir_ptr = NULL;
-      char update[MAXPATHLEN + 256];
-      memset(update, 0, sizeof(update));
-      sprintf(update, "direvent file add: %s\n", path);
-      printf("%s", update);
-      zstr_send(publisher, update);
+      if ( !cbt_contains(&cbt, path)) {
+        int fd = open(path, O_NONBLOCK|O_RDONLY|O_CLOEXEC);
+        ev_io_init(&dir_watcher[fd], file_cb, fd, EV_LIBUV_KQUEUE_HACK);
+        ev_io_start(loop, &dir_watcher[fd]);
+        assert(empty_dir_node(&dir_cluster[fd]));
+        dir_cluster[fd].path = path;
+        dir_cluster[fd].parent = NULL;
+        dir_cluster[fd].dir_ptr = NULL;
+        cbt_insert(&cbt, path, &fd);
+        char update[MAXPATHLEN + 256];
+        memset(update, 0, sizeof(update));
+        sprintf(update, "direvent file add: %s\n", path);
+        printf("%s", update);
+        zstr_send(publisher, update);
+      } else {
+        free(path);
+      }
     }
   }
   return sum;
@@ -216,7 +221,11 @@ remove_nodes_cb ( const char *elem, void* value, void *arg ) {
 
   int fd  = *(int*)value;
   dir_node* p = &dir_cluster[fd];
-  assert(p == &dir_cluster[fd]);
+
+  if ( p->dir_ptr == NULL ) {
+    /* do not handle file watcher */
+    return 0;
+  }
   ev_io_stop(loop, &dir_watcher[fd]);
   char update[MAXPATHLEN + 256];
   memset(update, 0, sizeof(update));

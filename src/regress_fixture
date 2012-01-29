@@ -6,6 +6,10 @@ sleep 1;
 mkdir -p /tmp/a/{b,c}/d/e/f/{g,h,i,j}/{k,l};
 sleep 1;
 
+# add some file
+touch /tmp/a/c/d/e/f/g/{f1,f2,f3}
+sleep 1;
+
 # directory recursive remove
 rm -Rf /tmp/a/c/d/e/f/g
 sleep 1;

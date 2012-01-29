@@ -121,22 +121,23 @@ readdir_cb (eio_req *req)
         struct stat st;
         lstat(pwd, &st);
         if (later_than(now, st.st_ctimespec)) {
-          int fd = open(pwd, O_NONBLOCK|O_RDONLY|O_CLOEXEC);
-          ev_io_init(&dir_watcher[fd], file_cb, fd, EV_LIBUV_KQUEUE_HACK);
-          ev_io_start(loop, &dir_watcher[fd]);
-          assert(empty_dir_node(&dir_cluster[fd]));
-          dir_cluster[fd].path = strdup(pwd);
-          dir_cluster[fd].parent = NULL;
-          dir_cluster[fd].dir_ptr = NULL;
-          char update[MAXPATHLEN + 256];
-          memset(update, 0, sizeof(update));
-          sprintf(update, "direvent file add: %s/%s\n", req_data, name);
-          printf("%s", update);
-          zstr_send(publisher, update);
+          if ( !cbt_contains(&cbt, pwd)) {
+            int fd = open(pwd, O_NONBLOCK|O_RDONLY|O_CLOEXEC);
+            ev_io_init(&dir_watcher[fd], file_cb, fd, EV_LIBUV_KQUEUE_HACK);
+            ev_io_start(loop, &dir_watcher[fd]);
+            assert(empty_dir_node(&dir_cluster[fd]));
+            dir_cluster[fd].path = strdup(pwd);
+            dir_cluster[fd].parent = NULL;
+            dir_cluster[fd].dir_ptr = NULL;
+            char update[MAXPATHLEN + 256];
+            memset(update, 0, sizeof(update));
+            sprintf(update, "direvent file add: %s/%s\n", req_data, name);
+            printf("%s", update);
+            zstr_send(publisher, update);
+          }
         }
       }
     }
-
   return 0;
 }
 
@@ -209,6 +210,7 @@ file_cb (EV_P_ ev_io *w, int revents)
     printf("direvent file delete: %s\n", dir_cluster[w->fd].path);
     close(w->fd);
     ev_io_stop(loop, w);
+    cbt_delete(&cbt, dir_cluster[w->fd].path);
     free(dir_cluster[w->fd].path);
     memset(&dir_cluster[w->fd], 0, sizeof(dir_node));
   } else {
