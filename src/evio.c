@@ -136,6 +136,7 @@ readdir_cb (eio_req *req)
             assert(empty_dir_node(&dir_cluster[fd]));
             memset(&dir_cluster[fd], 0, sizeof(dir_node));
             dir_cluster[fd].path = strdup(pwd);
+            cbt_insert(&cbt, pwd, &fd);
             z_dir(pwd, "file add");
           }
         }
@@ -206,23 +207,27 @@ file_cb (EV_P_ ev_io *w, int revents)
 {
   assert(revents == EV_LIBUV_KQUEUE_HACK);
   time(&now);
-  printf("\nFILE_EVENT[%d]: %s\n", w->fd, dir_cluster[w->fd].path);
+  char * path = dir_cluster[w->fd].path;
+  printf("\nFILE_EVENT[%d]: %s\n", w->fd, path);
   struct stat st;
-  int ret = stat(dir_cluster[w->fd].path, &st);
-  char update[MAXPATHLEN + 256];
-  memset(update, 0, sizeof(update));
+  int ret = stat(path, &st);
+
   if ( ret < 0 ) {
-    sprintf(update, "direvent file delete: %s\n", dir_cluster[w->fd].path);
+    z_dir(path, "file delete");
     close(w->fd);
     ev_io_stop(loop, w);
-    cbt_delete(&cbt, dir_cluster[w->fd].path);
+    cbt_delete(&cbt, path);
     free(dir_cluster[w->fd].path);
     memset(&dir_cluster[w->fd], 0, sizeof(dir_node));
   } else {
-    sprintf(update, "direvent file change: %s\n", dir_cluster[w->fd].path);
+    if (!cbt_contains(&cbt,  path)) {
+      int fd = w->fd;
+      cbt_insert(&cbt, path, &fd);
+      z_dir(path, "file change");
+    } else {
+      z_dir(path, "file change");
+    }
   }
-  printf("%s", update);
-  zstr_send(publisher, update);
 }
 
 void
