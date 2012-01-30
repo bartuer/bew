@@ -32,7 +32,16 @@ sleep 1;
 echo "content" > /tmp/a/p/file;
 sleep 1;
 
-# file remove
-rm /tmp/a/p/file;
+# file renmae
+mv /tmp/a/p/file /tmp/a/p/filen;
 sleep 1;
+
+# file move
+mv /tmp/a/p/filen /tmp/a;
+sleep 1;
+
+# file remove
+rm /tmp/a/filen;
+sleep 1;
+
 

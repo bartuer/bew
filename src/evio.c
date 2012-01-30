@@ -126,19 +126,15 @@ readdir_cb (eio_req *req)
           insert_nodes(son, father, dir_cluster);
         }
       } else {
-        struct stat st;
-        lstat(pwd, &st);
-        if (later_than(now, st.st_ctimespec)) {
-          if ( !cbt_contains(&cbt, pwd)) {
-            int fd = open(pwd, O_NONBLOCK|O_RDONLY|O_CLOEXEC);
-            ev_io_init(&dir_watcher[fd], file_cb, fd, EV_LIBUV_KQUEUE_HACK);
-            ev_io_start(loop, &dir_watcher[fd]);
-            assert(empty_dir_node(&dir_cluster[fd]));
-            memset(&dir_cluster[fd], 0, sizeof(dir_node));
-            dir_cluster[fd].path = strdup(pwd);
-            cbt_insert(&cbt, pwd, &fd);
-            z_dir(pwd, "file add");
-          }
+        if (!cbt_contains(&cbt, pwd)) {
+          int fd = open(pwd, O_NONBLOCK|O_RDONLY|O_CLOEXEC);
+          ev_io_init(&dir_watcher[fd], file_cb, fd, EV_LIBUV_KQUEUE_HACK);
+          ev_io_start(loop, &dir_watcher[fd]);
+          assert(empty_dir_node(&dir_cluster[fd]));
+          memset(&dir_cluster[fd], 0, sizeof(dir_node));
+          dir_cluster[fd].path = strdup(pwd);
+          cbt_insert(&cbt, pwd, &fd);
+          z_dir(pwd, "file add");
         }
       }
     }
