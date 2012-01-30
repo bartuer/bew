@@ -34,6 +34,7 @@ static ev_timer suicide_watcher;
 static ev_idle repeat_watcher;
 static ev_async ready_watcher;
 static ev_io cmd_watcher;
+static char root_dir_arg[MAXPATHLEN];
 
 void
 z_dir ( char* path, char* sub) {
@@ -144,7 +145,7 @@ readdir_cb (eio_req *req)
 static void
 timeout_cb (EV_P_ ev_timer *w, int revents)
 {
-  printf("cbt count: %d\n", check_cbt("/private/tmp/a"));
+  printf("cbt count: %d\n", check_cbt(root_dir_arg));
 }
 
 static void
@@ -222,7 +223,11 @@ file_cb (EV_P_ ev_io *w, int revents)
       cbt_insert(&cbt, path, &fd);
       z_dir(path, "file change");
     } else {
-      z_dir(path, "file change");
+      struct stat st;
+      fstat(w->fd, &st);
+      if (later_than(now, st.st_mtimespec)) {
+        z_dir(path, "file change");         
+      }
     }
   }
 }
@@ -271,7 +276,8 @@ main (int argc, char**argv)
 
   ev_timer_init (&timeout_watcher, timeout_cb, 1, 1.);
   ev_timer_start (loop, &timeout_watcher);
- 
+
+  strcpy(root_dir_arg, argv[1]);
   add_root_node(argv[1], dir_cluster);
   
   ev_idle_init (&repeat_watcher, repeat);
