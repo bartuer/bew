@@ -121,7 +121,6 @@
           use remove_nodes only now
 * DONE fs dir/file pub [7/7]
   SCHEDULED: <2012-01-29 Sun 10:00>
-  CLOCK: [2012-01-30 Mon 16:02]--[2012-01-30 Mon 17:08] =>  1:06
   :PROPERTIES:
   :Effort:   8:00
   :Clockhistory: 9

@@ -32,8 +32,8 @@ $(LIBEV):$(LIBEVPATH)/ev_kqueue.c $(LIBEVPATH)/ev.c $(LIBEVPATH)/ev_select.c
 sub_memcheck:sub
 	valgrind --leak-check=yes ./sub tcp://localhost:5556 10001 
 
-sub:sub.o
-	$(CXX) -L$(ZMQBASE)/lib -lzmq -lczmq -o sub sub.o
+evsub:sub.o
+	$(CXX) -L$(ZMQBASE)/lib -lzmq -lczmq -o evsub sub.o
 
 sub.o:sub.c
 	$(CC) -c -O3 -I. -I$(ZMQBASE)/include sub.c -o sub.o

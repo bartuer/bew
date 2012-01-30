@@ -156,8 +156,9 @@ suicide_cb (EV_P_ ev_timer *w, int revents)
 static void
 repeat (EV_P_ ev_idle *w, int revents)
 {
-  if (eio_poll () != -1)
+  if (eio_poll () != -1) {
     ev_idle_stop (EV_A_ w);
+  }
 }
 
 static void
@@ -260,7 +261,7 @@ main (int argc, char**argv)
 
   if ( argv[2] ) {
     int seconds = atoi(argv[2]);
-    assert(seconds > 10);
+    assert(seconds > 0);
     ev_timer_init (&suicide_watcher, suicide_cb, seconds, 0.);
     ev_timer_start (loop, &suicide_watcher);
   }

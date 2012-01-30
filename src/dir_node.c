@@ -132,7 +132,6 @@ void clean_dir_node(dir_node* node) {
   assert(empty_dir_node(node));
 }
 
-
 unsigned int
 add_nodes (dir_node* root, dir_node* slot) {
   struct dirent* ent;
@@ -147,7 +146,7 @@ add_nodes (dir_node* root, dir_node* slot) {
 
       sum++;
       cbt_insert(&cbt, node->path, &fd);
-      z_dir(slot[fd].path, "add subdir");
+      z_dir(slot[fd].path, "dir add");
       sum += add_nodes(node, slot);
     } else {
       unsigned int namelen, p_namelen;
@@ -184,7 +183,7 @@ add_root_node ( char* path, dir_node* slot ) {
   assert(root_node);
   int root_fd = dirfd(root_node->dir_ptr);
   cbt_insert(&cbt, root_node->path, &root_fd);
-  z_dir(path, "add subdir");
+  z_dir(path, "dir add");
   return add_nodes(root_node, slot);
 }
 
@@ -201,7 +200,7 @@ insert_nodes ( dir_node* root,     /* root of tree to be inserted*/
   root->parent = parent;
   sum++;
   cbt_insert(&cbt, root->path, &root_fd);
-  z_dir(root->path, "add subdir");
+  z_dir(root->path, "dir add");
   sum += add_nodes(root, slot);
   return sum;
 }
@@ -220,7 +219,7 @@ remove_nodes_cb ( const char *elem, void* value, void *arg ) {
     return 0;
   }
   ev_io_stop(loop, &dir_watcher[fd]);
-  z_dir(elem, "remove subdir");
+  z_dir(elem, "dir remove");
   if ( !empty_dir_node(&dir_cluster[fd]) ) {
     clean_dir_node(p);        
   }
@@ -248,7 +247,7 @@ remove_node ( dir_node* p ) {
       it is posssible subdir node remove before parent:
       if subdir remove event arrive before parent dir remove event
     */
-    z_dir(p->path, "remove subdir");
+    z_dir(p->path, "dir remove");
     clean_dir_node(p);    
   }
   return 1;
