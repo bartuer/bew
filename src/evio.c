@@ -261,7 +261,7 @@ main (int argc, char**argv)
 
   if ( argv[2] ) {
     int seconds = atoi(argv[2]);
-    assert(seconds > 0);
+    assert(seconds > 1);
     ev_timer_init (&suicide_watcher, suicide_cb, seconds, 0.);
     ev_timer_start (loop, &suicide_watcher);
   }
