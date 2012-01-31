@@ -14,7 +14,8 @@
 #include "eio.h"
 #include "ev.h"
 
-#define MAXFDNUM 1024
+/* sysctl -A |grep "kern.maxfilesperproc" */
+#define MAXFDNUM 60000
 
 typedef struct dir_node_s dir_node;
 
@@ -45,5 +46,7 @@ unsigned int remove_nodes ( dir_node* root);
 unsigned int remove_node ( dir_node* p);
 void dir_node_rewind ( dir_node* node );
 int check_cbt(const char* path);
+
 extern void dir_cb (EV_P_ ev_io *w, int revents);
 extern void file_cb (EV_P_ ev_io *w, int revents);
+extern void z_dir ( char* path, char* sub);

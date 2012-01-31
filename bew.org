@@ -164,3 +164,31 @@
         (link "~/local/src/bew/src/evio.c" 3099)
         - rename
         - move
+* TODO portable fix [2/3]
+  SCHEDULED: <2012-02-01 Wed 06:30>
+  CLOCK: [2012-02-01 Wed 06:32]--[2012-02-01 Wed 07:17] =>  0:45
+  :PROPERTIES:
+  :Effort:   1:30
+  :Clockhistory: 1
+  | :Clock1: | [2012-02-01 Wed 06:32]--[2012-02-01 Wed 07:17] =>  0:45 | fd limit |   45 |
+  |          |                                                         |          | 0.75 |
+  #+TBLFM: $4='(convert-time-to-minutes $2)::@2$4=vsum(@1..@1)/60;%.2f
+  :END:
+  - [X] possible watcher network folder, but slow
+        - if change on watched place is fast
+  - [X] add/remove large dir will cast negative fd error
+        - assert report in evio
+        - seems due to OS X file descriptors limitation
+          sudo launchctl limit maxfiles oneproc all
+          sysctl -A |grep kern.maxfilesperproc
+          ulimit -n in .bashrc
+          - the limit is 8k but die at 1.5k
+          - due to loop symlink
+          - due to larger than MAXFDNUM
+          - link helpful
+            http://wiki.basho.com/Open-Files-Limit.html
+          - system limit is about 60k
+            sudo launchctl limit maxfiles 163840 327680
+            ulimit -n 163840
+            32432 files need about 21M memeory
+  - [ ] port build

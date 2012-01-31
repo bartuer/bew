@@ -160,6 +160,10 @@ add_nodes (dir_node* root, dir_node* slot) {
       sprintf(path, "%s/%s", p_name, d_name);
       if ( !cbt_contains(&cbt, path)) {
         int fd = open(path, O_NONBLOCK|O_RDONLY|O_CLOEXEC);
+        if ( fd < 0 ) {
+           printf("%s open error %s\n", path, strerror(errno));
+           abort();
+        }
         ev_io_init(&dir_watcher[fd], file_cb, fd, EV_LIBUV_KQUEUE_HACK);
         ev_io_start(loop, &dir_watcher[fd]);
         assert(empty_dir_node(&dir_cluster[fd]));
@@ -219,7 +223,7 @@ remove_nodes_cb ( const char *elem, void* value, void *arg ) {
     return 0;
   }
   ev_io_stop(loop, &dir_watcher[fd]);
-  z_dir(elem, "dir remove");
+  z_dir((char*)elem, "dir remove");
   if ( !empty_dir_node(&dir_cluster[fd]) ) {
     clean_dir_node(p);        
   }
