@@ -18,7 +18,7 @@ evio_memcheck:evio
 	sh ./regress_fixture
 
 evio:evio.o dir_node.o cbt.o
-	$(CXX) -o evio evio.o dir_node.o cbt.o $(LIBPATH)/libeio/.libs/libeio.a $(LIBPATH)/libev/.libs/libev.a -L$(ZMQBASE)/lib -lzmq -lczmq
+	$(CXX) -o evio evio.o dir_node.o cbt.o $(LIBPATH)/libeio/.libs/libeio.a $(LIBPATH)/libev/.libs/libev.a $(ZMQBASE)/lib/libzmq.a $(ZMQBASE)/lib/libczmq.a
 
 evio.o:evio.c $(LIBEV) 
 	$(CC) -I$(LIBPATH)/libeio -I$(LIBPATH)/libev -I$(ZMQBASE)/include -c evio.c 
@@ -33,10 +33,10 @@ sub_memcheck:sub
 	valgrind --leak-check=yes ./sub tcp://localhost:5556 10001 
 
 evsub:sub.o
-	$(CXX) -L$(ZMQBASE)/lib -lzmq -lczmq -o evsub sub.o
+	$(CXX) -o evsub sub.o $(ZMQBASE)/lib/libzmq.a $(ZMQBASE)/lib/libczmq.a
 
 sub.o:sub.c
-	$(CC) -c -O3 -I. -I$(ZMQBASE)/include sub.c -o sub.o
+	$(CC) -c -O3 -I. -I$(ZMQBASE)/include sub.c -o sub.o 
 
 pub:pub.o
 	$(CXX) -L$(ZMQBASE)/lib -lzmq -lczmq -lev -leio -o pub pub.o
