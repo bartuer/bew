@@ -9,8 +9,8 @@ LIBEIO=$(LIBEIOPATH)/.libs/libeio.a
 LIBZMQ=$(LIBZMQPATH)/src/.libs/libzmq.a
 LIBCZMQ=$(LIBCZMQPATH)/src/.libs/libczmq.a
 
-CC=clang
-CXX=clang++
+CC=gcc
+CXX=g++
 SYNTAX_CHECK_FLAG=--analyze -fno-caret-diagnostics -fno-color-diagnostics -fno-show-column
 
 test:evio
