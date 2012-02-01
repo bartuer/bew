@@ -128,7 +128,7 @@ readdir_cb (eio_req *req)
         }
       } else {
         if (!cbt_contains(&cbt, pwd)) {
-          int fd = open(pwd, O_NONBLOCK|O_RDONLY|O_CLOEXEC);
+          int fd = open(pwd, O_NONBLOCK|O_RDONLY);
           ev_io_init(&dir_watcher[fd], file_cb, fd, EV_LIBUV_KQUEUE_HACK);
           ev_io_start(loop, &dir_watcher[fd]);
           assert(empty_dir_node(&dir_cluster[fd]));
