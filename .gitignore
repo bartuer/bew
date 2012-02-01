@@ -152,3 +152,4 @@ lib/zeromq/perf/.libs
 /lib/zeromq/autom4te.cache/traces.1
 /lib/zeromq/autom4te.cache/traces.2
 /lib/zeromq/src/platform.hpp.in~
+/doc/reference/sample/inotify

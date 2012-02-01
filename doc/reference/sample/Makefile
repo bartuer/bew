@@ -1,10 +1,20 @@
 LIBPATH=../../../lib
 LIBEV=$(LIBPATH)/libev/.libs/libev.a
 LIBEVPATH=$(LIBPATH)/libev
-CC=clang
-CXX=clang++
-SYNTAX_CHECK_FLAG=--analyze -fno-caret-diagnostics -fno-color-diagnostics -fno-show-column
+CC=gcc
+CXX=g++
+SYNTAX_CHECK_FLAG=
 ZMQBASE=/Users/bartuer/local
+
+inotify_test:inotify /tmp/a
+	rm -Rf /tmp/a/*
+	./inotify /tmp/a < inotify_fixture
+
+/tmp/a:
+	mkdir -p /tmp/a
+
+inotify:inotify.c
+	$(CC) -g -I$(LIBPATH)/libeio -I$(LIBPATH)/libev -o inotify inotify.c $(LIBPATH)/libeio/.libs/libeio.a  $(LIBPATH)/libev/.libs/libev.a -lpthread
 
 evio_test:evio /tmp/evio
 	mkdir -p /tmp/evio/fail
