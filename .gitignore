@@ -144,3 +144,11 @@ lib/zeromq/perf/.libs
 /lib/czmq/src/platform.h
 /lib/czmq/src/stamp-h1
 /src/evsub.o
+/lib/zeromq/autom4te.cache/output.0
+/lib/zeromq/autom4te.cache/output.1
+/lib/zeromq/autom4te.cache/output.2
+/lib/zeromq/autom4te.cache/requests
+/lib/zeromq/autom4te.cache/traces.0
+/lib/zeromq/autom4te.cache/traces.1
+/lib/zeromq/autom4te.cache/traces.2
+/lib/zeromq/src/platform.hpp.in~
