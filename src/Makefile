@@ -25,7 +25,7 @@ evio_memcheck:evio
 	sh ./regress_fixture
 
 evio:evio.o dir_node.o cbt.o
-	$(CXX) -o evio evio.o dir_node.o cbt.o $(LIBEIO) $(LIBEV) $(LIBZMQ) $(LIBCZMQ)
+	$(CXX) -O3 -o evio evio.o dir_node.o cbt.o $(LIBEIO) $(LIBEV) $(LIBZMQ) $(LIBCZMQ)
 
 evio.o:evio.c $(LIBEV) 
 	$(CC) -I$(LIBEIOPATH) -I$(LIBEVPATH) $(LIBZMQINC) -c evio.c 
@@ -40,16 +40,16 @@ evsub_memcheck:evsub
 	valgrind --leak-check=yes ./evsub tcp://localhost:5556 10001 
 
 evsub:evsub.o
-	$(CXX) -o evsub evsub.o $(LIBZMQ) $(LIBCZMQ)
+	$(CXX) -O3 -o evsub evsub.o $(LIBZMQ) $(LIBCZMQ)
 
 evsub.o:evsub.c
 	$(CC) -c -O3 -I. $(LIBZMQINC) evsub.c -o evsub.o 
 
 dir_node.o:dir_node.c
-	$(CC) -c -I. -I$(LIBEIOPATH) -I$(LIBEVPATH) -o dir_node.o dir_node.c
+	$(CC) -c -O3 -I. -I$(LIBEIOPATH) -I$(LIBEVPATH) -o dir_node.o dir_node.c
 
 cbt.o:cbt.c
-	$(CC) -c -o cbt.o cbt.c
+	$(CC) -c -O3 -o cbt.o cbt.c
 
 check-syntax:
 	$(CC) $(SYNTAX_CHECK_FLAG) -I. $(LIBZMQINC) -I$(LIBEIO) -I$(LIBEVPATH) $(CHK_SOURCES)
