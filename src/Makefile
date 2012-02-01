@@ -1,10 +1,17 @@
 LIBPATH=../lib
-LIBEV=$(LIBPATH)/libev/.libs/libev.a
 LIBEVPATH=$(LIBPATH)/libev
+LIBEIOPATH=$(LIBPATH)/libeio
+LIBZMQPATH=$(LIBPATH)/zeromq
+LIBCZMQPATH=$(LIBPATH)/czmq
+LIBZMQINC=-I$(LIBZMQPATH)/include -I$(LIBCZMQPATH)/include
+LIBEV=$(LIBEVPATH)/.libs/libev.a
+LIBEIO=$(LIBEIOPATH)/.libs/libeio.a
+LIBZMQ=$(LIBZMQPATH)/src/.libs/libzmq.a
+LIBCZMQ=$(LIBCZMQPATH)/src/.libs/libczmq.a
+
 CC=clang
 CXX=clang++
 SYNTAX_CHECK_FLAG=--analyze -fno-caret-diagnostics -fno-color-diagnostics -fno-show-column
-ZMQBASE=/Users/bartuer/local
 
 test:evio
 	rm -Rf /tmp/a/*
@@ -18,10 +25,10 @@ evio_memcheck:evio
 	sh ./regress_fixture
 
 evio:evio.o dir_node.o cbt.o
-	$(CXX) -o evio evio.o dir_node.o cbt.o $(LIBPATH)/libeio/.libs/libeio.a $(LIBPATH)/libev/.libs/libev.a $(ZMQBASE)/lib/libzmq.a $(ZMQBASE)/lib/libczmq.a
+	$(CXX) -o evio evio.o dir_node.o cbt.o $(LIBEIO) $(LIBEV) $(LIBZMQ) $(LIBCZMQ)
 
 evio.o:evio.c $(LIBEV) 
-	$(CC) -I$(LIBPATH)/libeio -I$(LIBPATH)/libev -I$(ZMQBASE)/include -c evio.c 
+	$(CC) -I$(LIBEIOPATH) -I$(LIBEVPATH) $(LIBZMQINC) -c evio.c 
 
 /tmp/evio:
 	mkdir /tmp/evio
@@ -29,33 +36,25 @@ evio.o:evio.c $(LIBEV)
 $(LIBEV):$(LIBEVPATH)/ev_kqueue.c $(LIBEVPATH)/ev.c $(LIBEVPATH)/ev_select.c
 	cd /Users/bartuer/local/src/bew/lib/libev; make
 
-sub_memcheck:sub
-	valgrind --leak-check=yes ./sub tcp://localhost:5556 10001 
+evsub_memcheck:evsub
+	valgrind --leak-check=yes ./evsub tcp://localhost:5556 10001 
 
-evsub:sub.o
-	$(CXX) -o evsub sub.o $(ZMQBASE)/lib/libzmq.a $(ZMQBASE)/lib/libczmq.a
+evsub:evsub.o
+	$(CXX) -o evsub evsub.o $(LIBZMQ) $(LIBCZMQ)
 
-sub.o:sub.c
-	$(CC) -c -O3 -I. -I$(ZMQBASE)/include sub.c -o sub.o 
-
-pub:pub.o
-	$(CXX) -L$(ZMQBASE)/lib -lzmq -lczmq -lev -leio -o pub pub.o
-
-pub.o:pub.c
-	$(CC) -c -O3 -I. -I$(ZMQBASE)/include pub.c -o pub.o
-
+evsub.o:evsub.c
+	$(CC) -c -O3 -I. $(LIBZMQINC) evsub.c -o evsub.o 
 
 dir_node.o:dir_node.c
-	$(CC) -c -I. -I$(LIBPATH)/libeio -I$(LIBPATH)/libev -o dir_node.o dir_node.c
+	$(CC) -c -I. -I$(LIBEIOPATH) -I$(LIBEVPATH) -o dir_node.o dir_node.c
 
 cbt.o:cbt.c
 	$(CC) -c -o cbt.o cbt.c
 
 check-syntax:
-	$(CC) -I$(ZMQBASE)/include $(SYNTAX_CHECK_FLAG) -I. -I$(LIBPATH)/libeio -I$(LIBPATH)/libev $(CHK_SOURCES)
+	$(CC) $(SYNTAX_CHECK_FLAG) -I. $(LIBZMQINC) -I$(LIBEIO) -I$(LIBEVPATH) $(CHK_SOURCES)
 
 clean:
 	rm *.o
 	rm evio
-	rm pub
-	rm sub
+	rm evsub

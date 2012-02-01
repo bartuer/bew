@@ -164,15 +164,16 @@
         (link "~/local/src/bew/src/evio.c" 3099)
         - rename
         - move
-* TODO portable fix [2/3]
+* TODO portable fix [3/4]
   SCHEDULED: <2012-02-01 Wed 06:30>
-  CLOCK: [2012-02-01 Wed 06:32]--[2012-02-01 Wed 07:17] =>  0:45
+  CLOCK: [2012-02-01 Wed 07:35]--[2012-02-01 Wed 07:42] =>  0:07
   :PROPERTIES:
   :Effort:   1:30
-  :Clockhistory: 1
+  :Clockhistory: 2
   | :Clock1: | [2012-02-01 Wed 06:32]--[2012-02-01 Wed 07:17] =>  0:45 | fd limit |   45 |
-  |          |                                                         |          | 0.75 |
-  #+TBLFM: $4='(convert-time-to-minutes $2)::@2$4=vsum(@1..@1)/60;%.2f
+  | :Clock2: | [2012-02-01 Wed 07:35]--[2012-02-01 Wed 07:42] =>  0:07 | code mv  |    7 |
+  |          |                                                         |          | 0.87 |
+  #+TBLFM: $4='(convert-time-to-minutes $2)::@3$4=vsum(@1..@2)/60;%.2f
   :END:
   - [X] possible watcher network folder, but slow
         - if change on watched place is fast
@@ -191,4 +192,8 @@
             sudo launchctl limit maxfiles 163840 327680
             ulimit -n 163840
             32432 files need about 21M memeory
-  - [ ] port build
+  - [X] port build
+        - self include
+        - branch on OS
+        - build file
+  - [ ] st time works with version file system ?
