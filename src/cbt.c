@@ -182,7 +182,8 @@ allprefixed_traverse(uint8 *top,
                      int (*handle) (const char *, void *, void *), void *arg){
   if (1 & (intptr_t) top) {                                               /* Deal with an internal node */
     cbt_node *q = (void *) (top - 1);
-    for (int direction = 0; direction < 2; ++direction)
+    int direction;
+    for (direction = 0; direction < 2; ++direction)
       switch(allprefixed_traverse(q->child[direction], handle, arg)){
         case 1: break;
         case 0: return 0;
@@ -216,7 +217,8 @@ cbt_allprefixed(cbt_tree *t, const char *prefix,
     if (q->byte < ulen) top = p;
   }
 
-  for (size_t i = 0; i < ulen; ++i) {                                      /* Check prefix */
+  size_t i;
+  for (i = 0; i < ulen; ++i) {                                      /* Check prefix */
     if (p[i] != ubytes[i]) return 1;
   }
 
