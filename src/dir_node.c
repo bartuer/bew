@@ -159,7 +159,7 @@ add_nodes (dir_node* root, dir_node* slot) {
       assert(path);
       sprintf(path, "%s/%s", p_name, d_name);
       if ( !cbt_contains(&cbt, path)) {
-        int fd = open(path, O_NONBLOCK|O_RDONLY|O_CLOEXEC);
+        int fd = open(path, O_NONBLOCK|O_RDONLY);
         if ( fd < 0 ) {
            printf("%s open error %s\n", path, strerror(errno));
            abort();
