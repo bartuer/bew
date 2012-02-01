@@ -187,6 +187,7 @@ cmd_cb (struct ev_loop *loop, ev_io *w, int revents)
   char line[8096];
   memset(line, 0, 8096);
   buf_t cmd = {line,8096};
+  printf("return to begin:\n");
   read(w->fd, cmd.base, cmd.len);
   printf("line: %s\n",line);
   pthread_t t;
@@ -271,8 +272,8 @@ main (int argc, char**argv)
     ev_timer_start (loop, &suicide_watcher);
   }
   
-  ev_io_init (&cmd_watcher, cmd_cb, 0, EV_READ);
-  ev_io_start (loop, &cmd_watcher);
+  /* ev_io_init (&cmd_watcher, cmd_cb, 0, EV_READ); */
+  /* ev_io_start (loop, &cmd_watcher); */
 
   /* ev_timer_init (&timeout_watcher, timeout_cb, 1, 1.); */
   /* ev_timer_start (loop, &timeout_watcher); */

@@ -31,9 +31,9 @@ cbt_insert(cbt_tree *t, const char *u, void* value) {
   uint8 *p = t->root;
 
   if (!p) {
-    char *x;
-    int a = posix_memalign((void **) &x, sizeof(void *), ulen + 1 + sizeof(void*));
-    if (a) {
+    char *x = NULL;
+    x = malloc(ulen + 1 + sizeof(void*));
+    if (x == NULL) {
       return 0;
     }
     memcpy(x, u, ulen + 1);
@@ -80,14 +80,14 @@ cbt_insert(cbt_tree *t, const char *u, void* value) {
   uint8 c = p[newbyte];
   int newdirection = (1 + (newotherbits | c)) >> 8;
 
-  cbt_node *newnode;                                                      /* allocate new node strcuture */
-  if (posix_memalign((void **) &newnode,
-                     sizeof(void *),
-                     sizeof(cbt_node)))
+  cbt_node *newnode = NULL;                                                      /* allocate new node strcuture */
+  newnode = malloc(sizeof(cbt_node));
+  if (newnode == NULL) {
     return 0;
-
-  char *x;
-  if (posix_memalign((void **) &x, sizeof(void *), ulen + 1 + sizeof(void*))) {
+  }
+  char *x = NULL;
+  x = malloc(ulen + 1 + sizeof(void*));
+  if (x == NULL) {
     free(newnode);
     return 0;
   }
