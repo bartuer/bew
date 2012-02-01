@@ -2,6 +2,7 @@ touch /tmp/a/file
 mv /tmp/a/file /tmp/a/filen
 rm /tmp/a/filen
 
+mkdir -p /tmp/a/p
 mkdir -p /tmp/a/t/b
 mv /tmp/a/t/b /tmp/a/t/c
 mv /tmp/a/t/c /tmp/a

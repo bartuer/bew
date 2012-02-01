@@ -66,8 +66,12 @@ dir_cb (EV_P_ ev_io *w, int revents)
         case IN_MOVED_TO:
           printf("event: %s, %s\n","IN_MOVED_TO", ev->len ? ev->name : "none");
           break;
+        case IN_CLOSE_WRITE:
+        case IN_CLOSE_NOWRITE:
+          printf("event: %s, %s\n","IN_CLOSE", ev->len ? ev->name : "none");
+          break;
         default:
-          printf("event: %s\n","NONE");
+          printf("event: %d, %s cookie[%d]\n",ev->mask, ev->len ? ev->name : "none", ev->cookie);
         }
       ofs += sizeof (struct inotify_event) + ev->len;
     }
@@ -150,8 +154,10 @@ int main(int argc, char *argv[])
                              IN_MODIFY |
                              IN_DELETE |
                              IN_DELETE_SELF |
+                             IN_MOVE_SELF |
                              IN_CLOSE |
-                             IN_ATTRIB
+                             IN_ATTRIB |
+                             IN_MASK_ADD
                              );
   assert(wd != -1);
   
