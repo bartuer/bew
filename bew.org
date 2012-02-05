@@ -176,6 +176,7 @@
   | :Clock4: | [2012-02-01 Wed 07:28]--[2012-02-01 Wed 10:18] =>  2:50 | inotify interface |  170 |
   |          |                                                         |                   | 4.45 |
   #+TBLFM: $4='(convert-time-to-minutes $2)::@5$4=vsum(@1..@4)/60;%.2f
+  :Commit:   (git-link "~/local/src/bew" "86b8a8dea81ba0ddda41f019701dd3a436ba5371")
   :END:
   - [X] possible watcher network folder, but slow
         - if change on watched place is fast

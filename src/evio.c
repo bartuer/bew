@@ -220,7 +220,8 @@ dir_cb (EV_P_ ev_io *w, int revents)
                   z_dir(pwd, "file add");
                 }
               }
-              
+            } else {
+              printf("direvent dir remove: %s\n",pwd);
             }
           }
         }
