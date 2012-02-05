@@ -40,9 +40,6 @@ unsigned int add_root_node ( char* path,
                              dir_node* slot);
 unsigned int add_nodes (dir_node* root,
                         dir_node* slot);
-unsigned int insert_nodes ( dir_node* root,     
-                            dir_node* parent,   
-                            dir_node* slot);
 unsigned int remove_nodes ( dir_node* root);
 unsigned int remove_node ( dir_node* p);
 int check_cbt(const char* path);

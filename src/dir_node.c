@@ -180,24 +180,6 @@ add_root_node ( char* path, dir_node* slot ) {
   return add_nodes(root_node, slot);
 }
 
-unsigned int
-insert_nodes ( dir_node* root,     /* root of tree to be inserted*/
-               dir_node* parent,   /* inserted subtree's parent */
-               dir_node* slot) {   /* operate on this heap */
-  unsigned sum = 0;
-  assert(!empty_dir_node(root));
-  assert(parent);
-
-
-  int root_fd = infy_add(root->path);
-  root->parent = parent;
-  sum++;
-  cbt_insert(&cbt, root->path, &root_fd);
-  z_dir(root->path, "dir add");
-  sum += add_nodes(root, slot);
-  return sum;
-}
-
 static int
 remove_nodes_cb ( const char *elem, void* value, void *arg ) {
   if ( value == NULL ) {

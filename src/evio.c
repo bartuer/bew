@@ -172,8 +172,8 @@ dir_cb (EV_P_ ev_io *w, int revents)
       switch ( ev->mask )
         {
         case IN_ATTRIB:
-          printf("direvent file attr: %s\n", ev->len ? pwd : "none");
-        case IN_CREATE:
+          break;
+       case IN_CREATE:
           printf("direvent file add: %s\n",ev->len ? pwd : "none");
           break;
         case IN_MODIFY:
@@ -201,12 +201,11 @@ dir_cb (EV_P_ ev_io *w, int revents)
             int ret = stat(pwd, &st);
             if ( ret != -1 ) {
               if ( S_ISDIR(st.st_mode)) {
-                dir_node *father = &dir_cluster[fd];
-                dir_node *son;
-                if ( !cbt_contains(&cbt, pwd) ) {
-                  son = create_dir_node(ev->name, father, dir_cluster);
-                  assert(son);
-                  insert_nodes(son, father, dir_cluster);
+                 if ( !cbt_contains(&cbt, pwd) ) {
+                   dir_node *father = &dir_cluster[fd];
+                   dir_node* root = create_dir_node(ev->name, father, dir_cluster);
+                   assert(root);
+                   add_nodes(root, dir_cluster);
                 }
               } else {
                 if (!cbt_contains(&cbt, pwd)) {
@@ -221,7 +220,7 @@ dir_cb (EV_P_ ev_io *w, int revents)
                 }
               }
             } else {
-              printf("direvent dir remove: %s\n",pwd);
+              printf("direvent dir @ remove: %s\n",pwd);
             }
           }
         }
