@@ -164,19 +164,20 @@
         (link "~/local/src/bew/src/evio.c" 3099)
         - rename
         - move
-* TODO portable fix [5/6]
+* TODO portable fix [7/8]
   SCHEDULED: <2012-02-01 Wed 06:30>
-  CLOCK: [2012-02-05 Sun 07:26]--[2012-02-05 Sun 09:23] =>  1:57
+  CLOCK: [2012-02-05 Sun 10:20]
   :PROPERTIES:
   :Effort:   1:30
-  :Clockhistory: 5
+  :Clockhistory: 6
   | :Clock1: | [2012-02-01 Wed 06:32]--[2012-02-01 Wed 07:17] =>  0:45 | fd limit          |   45 |
   | :Clock2: | [2012-02-01 Wed 07:35]--[2012-02-01 Wed 07:42] =>  0:07 | code mv           |    7 |
   | :Clock3: | [2012-02-01 Wed 09:30]--[2012-02-01 Wed 10:15] =>  0:45 | src               |   45 |
   | :Clock4: | [2012-02-01 Wed 07:28]--[2012-02-01 Wed 10:18] =>  2:50 | inotify interface |  170 |
   | :Clock5: | [2012-02-05 Sun 07:26]--[2012-02-05 Sun 09:23] =>  1:57 | inotify fix       |  117 |
-  |          |                                                         |                   | 6.40 |
-  #+TBLFM: $4='(convert-time-to-minutes $2)::@6$4=vsum(@1..@5)/60;%.2f
+  | :Clock6: | [2012-02-05 Sun 09:23]--[2012-02-05 Sun 10:06] =>  0:43 | inotify limit     |   43 |
+  |          |                                                         |                   | 7.12 |
+  #+TBLFM: $4='(convert-time-to-minutes $2)::@7$4=vsum(@1..@6)/60;%.2f
   :Commit:   (git-link "~/local/src/bew" "86b8a8dea81ba0ddda41f019701dd3a436ba5371")
   :END:
   - [X] possible watcher network folder, but slow
@@ -216,4 +217,13 @@
         - remove insert_nodes
         - remove dir move logic
         - remove file_cb
+  - [X] watch fd limit
+        - it is not fd limit
+          it is unlimited, about 8388607
+          man 7 inotify
+          cat /proc/sys/fs/inotify/max_user_instances
+  - [X] memory performance
+        - it's memory size is as little as 1/10 of BSD
+        - Linux 10k file and dir about 700k
+        - BSD 10k file and dir about 7M
   - [ ] st time works with version file system ?

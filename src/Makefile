@@ -40,7 +40,7 @@ evsub_memcheck:evsub
 	valgrind --leak-check=yes ./evsub tcp://localhost:5556 10001 
 
 evsub:evsub.o
-	$(CXX) -O3 -o evsub evsub.o $(LIBZMQ) $(LIBCZMQ)
+	$(CXX) -O3 -o evsub evsub.o $(LIBZMQ) $(LIBCZMQ) -luuid -lrt 
 
 evsub.o:evsub.c
 	$(CC) -c -O3 -I. $(LIBZMQINC) evsub.c -o evsub.o 

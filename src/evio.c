@@ -145,27 +145,27 @@ dir_cb (EV_P_ ev_io *w, int revents)
         case IN_ATTRIB:
           break;
         case IN_CREATE:
-          printf("direvent file add: %s\n",ev->len ? pwd : "none");
+          z_dir(pwd, "file add");
           break;
         case IN_MODIFY:
-          printf("direvent file change: %s\n",ev->len ? pwd : "none");
+          z_dir(pwd, "file change");
           break;
         case IN_DELETE:
-          printf("direvent file delete: %s\n",ev->len ? pwd : "none");
+          z_dir(pwd, "file delete");
           break;
         case IN_DELETE_SELF:
         case IN_MOVE_SELF:
           remove_nodes(&dir_cluster[fd]);
           break;
         case IN_MOVED_FROM:
-          printf("direvent file mv from: %s\n",ev->len ? pwd : "none");
+          z_dir(pwd, "file delete");
           break;
         case IN_MOVED_TO:
-          printf("direvent file mv to: %s\n",ev->len ? pwd : "none");
+          z_dir(pwd, "file add");
           break;
         case IN_CLOSE_WRITE:
         case IN_CLOSE_NOWRITE:
-          printf("direvent file close: %s\n",ev->len ? pwd : "none");
+          z_dir(pwd, "file close");
           break;
         default:
           if ( ev->len ) {

@@ -153,3 +153,5 @@ lib/zeromq/perf/.libs
 /lib/zeromq/autom4te.cache/traces.2
 /lib/zeromq/src/platform.hpp.in~
 /doc/reference/sample/inotify
+/src/dir_node_flymake.o
+/src/evio_flymake.o

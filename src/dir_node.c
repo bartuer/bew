@@ -1,6 +1,7 @@
 #include "dir_node.h"
 #include <fcntl.h>
 #include <sys/inotify.h>
+#include <ulimit.h>
 #include "cbt.h"
 
 extern dir_node dir_cluster[MAXFDNUM];
@@ -14,7 +15,6 @@ infy_add ( char* path ) {
   int fd;
 #if defined (IN_CLOEXEC) && defined (IN_NONBLOCK)
   fd = inotify_init1 (IN_CLOEXEC | IN_NONBLOCK);
-  assert (fd >= 0)
 #else
   fd = inotify_init ();    
 #endif
