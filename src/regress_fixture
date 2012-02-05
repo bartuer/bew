@@ -1,47 +1,47 @@
 # two dir node split
 mkdir -p /tmp/a/{b,c};
-sleep 0.05;
+sleep 0.5;
 
 # directory recusive add
 mkdir -p /tmp/a/{b,c}/d/e/f/{g,h,i,j}/{k,l};
-sleep 0.05;
+sleep 0.5;
 
 # add some file
 touch /tmp/a/c/d/e/f/g/{f1,f2,f3}
-sleep 0.05;
+sleep 0.5;
 
 # directory recursive remove
 rm -Rf /tmp/a/c/d/e/f/g
-sleep 0.05;
+sleep 0.5;
 rm -Rf /tmp/a/c
-sleep 0.05;
+sleep 0.5;
 
 # directory move
 mv /tmp/a/b/d/e/f/h /tmp/a/b
-sleep 0.05;
+sleep 0.5;
 
 # directory rename
 mv /tmp/a/b /tmp/a/p
-sleep 0.05;
+sleep 1;
 
-# file add
-touch /tmp/a/p/file;
-sleep 0.05;
+# # file add
+# touch /tmp/a/p/file;
+# sleep 1;
 
-# file change
-echo "content" > /tmp/a/p/file;
-sleep 0.05;
+# # file change
+# echo "content" > /tmp/a/p/file;
+# sleep 1;
 
-# file renmae
-mv /tmp/a/p/file /tmp/a/p/filen;
-sleep 0.05;
+# # file renmae
+# mv /tmp/a/p/file /tmp/a/p/filen;
+# sleep 1;
 
-# file move
-mv /tmp/a/p/filen /tmp/a;
-sleep 0.05;
+# # file move
+# mv /tmp/a/p/filen /tmp/a;
+# sleep 1;
 
-# file remove
-rm /tmp/a/filen;
-sleep 0.05;
+# # file remove
+# rm /tmp/a/filen;
+# sleep 1;
 
 

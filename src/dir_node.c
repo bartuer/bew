@@ -1,4 +1,6 @@
 #include "dir_node.h"
+#include <fcntl.h>
+#include <sys/inotify.h>
 #include "cbt.h"
 
 extern dir_node dir_cluster[MAXFDNUM];
@@ -8,61 +10,70 @@ extern void* publisher;
 cbt_tree cbt = {0};
 
 int
+infy_add ( char* path ) {
+  int fd;
+#if defined (IN_CLOEXEC) && defined (IN_NONBLOCK)
+  fd = inotify_init1 (IN_CLOEXEC | IN_NONBLOCK);
+  assert (fd >= 0)
+#else
+  fd = inotify_init ();    
+#endif
+
+  assert(fd > 0);
+  int wd = inotify_add_watch(fd, path,
+                             IN_CREATE |
+                             IN_MOVED_FROM |
+                             IN_MOVED_TO |
+                             IN_MODIFY |
+                             IN_DELETE |
+                             IN_DELETE_SELF |
+                             IN_MOVE_SELF |
+                             IN_CLOSE |
+                             IN_ATTRIB |
+                             IN_MASK_ADD
+                             );
+
+  if ( wd == -1 ) {
+    printf("path make wd == -1: %s\n",path);
+  }
+  assert(wd != -1);
+  return fd;
+}
+
+int
 empty_dir_node ( dir_node* node ) {
-  int dir_ent = node->dir_ent == NULL;
-  int dir_ptr = node->dir_ptr == NULL;
   int parent = node->parent == NULL;
-  return (dir_ent && dir_ptr && parent );
+  return parent;
 }
 
 dir_node*
 create_root_dir_node (char* path, dir_node* slot) {
   dir_node node;
-  DIR* dirp = opendir(path);
-  assert(dirp);
-  struct dirent* current = readdir(dirp);
-  assert(current);
-  assert(!strcmp(current->d_name, "."));                 /* bypass . */
-  assert(current->d_type == DT_DIR);
-  struct dirent* father = readdir(dirp);                /* bypass .. */
-  assert(father);
-  assert(!strcmp(father->d_name, ".."));
-  assert(father->d_type == DT_DIR);
-  node.loc = telldir(dirp);
-  
-  node.dir_ent = current;
-  node.dir_ptr = dirp;
   node.parent = &node;
   /* add to queue maybe change these 2 pointer */
 
-  char* d_name = current->d_name;
-  char* root_path = realpath(path, d_name + 2);
-  node.path = strdup(root_path);
-
-  int fd = dirfd(dirp);
+  node.path = strdup(path);
+  int fd = infy_add(path);
   assert(fd < MAXFDNUM);
   assert(empty_dir_node(slot + fd));
   memcpy((dir_node*)(slot + fd), &node, sizeof(dir_node));
 
-  ev_io_init(&dir_watcher[fd], dir_cb, fd, EV_LIBUV_KQUEUE_HACK);
+  ev_io_init(&dir_watcher[fd], dir_cb, fd, EV_READ);
   ev_io_start(loop, &dir_watcher[fd]);
   return slot + fd;
 }
 
 dir_node*
-create_dir_node (struct dirent* entry,
+create_dir_node (char* d_name,
                  dir_node* parent, 
                  dir_node* slot
                  ) {
   dir_node node;
-  assert(entry->d_type == DT_DIR);
-  node.dir_ent = entry;
+
   node.parent = parent;
-  assert(node.parent->dir_ent);
 
   unsigned int namelen, p_namelen;
-  char * d_name = node.dir_ent->d_name;
-  char * p_name = node.parent->path;
+  char * p_name = parent->path;
   namelen = strlen(d_name);
   p_namelen = strlen(p_name);
   char* full_path = NULL;
@@ -72,27 +83,13 @@ create_dir_node (struct dirent* entry,
   full_path[p_namelen + namelen + 1] = 0;
   node.path = full_path;
 
-  DIR* dirp = opendir(node.path);
-  if ( dirp == NULL ) {
-    printf("node.path: %s\n",node.path);
-  }
-  assert(dirp);
-  struct dirent* current = readdir(dirp);
-  assert(current);
-  assert(!strcmp(current->d_name, "."));
-  assert(current->d_type == DT_DIR);
-  struct dirent* father = readdir(dirp);                /* bypass .. */
-  assert(parent);
-  assert(!strcmp(father->d_name, ".."));
-  assert(father->d_type == DT_DIR);
-  node.dir_ptr = dirp;
-  node.loc = telldir(dirp);
-  
-  int fd = dirfd(dirp);
+  int fd = infy_add(node.path);
   assert(fd < MAXFDNUM);
-  assert(empty_dir_node(slot + fd));
   memcpy((dir_node*)(slot + fd), &node, sizeof(node));
-  ev_io_init(&dir_watcher[fd], dir_cb, fd, EV_LIBUV_KQUEUE_HACK);
+  cbt_insert(&cbt, node.path, &fd);
+  z_dir(slot[fd].path, "dir add");
+
+  ev_io_init(&dir_watcher[fd], dir_cb, fd, EV_READ);
   ev_io_start(loop, &dir_watcher[fd]);
   return slot + fd;
 }
@@ -103,10 +100,7 @@ void dump_dir_node(dir_node* node) {
     printf(" cleaned node; \n");
   } else {
     size_t path_len = strlen(node->path);
-    size_t name_len = strlen(node->dir_ent->d_name);
     printf("\nnode->path[%lu]: %s\n", path_len, node->path);
-    printf("node.->dd_fd: %d\n",dirfd(node->dir_ptr));
-    printf("node.->d_name[%lu]: %s\n", name_len, node->dir_ent->d_name);
   }
 }
 
@@ -115,15 +109,6 @@ void clean_dir_node(dir_node* node) {
     return;
   }
   
-  if ( node->dir_ptr ) {
-    closedir(node->dir_ptr);
-    node->dir_ptr = NULL;
-  }
-
-  if ( node->dir_ent ) {
-    node->dir_ent = NULL;
-  }
-
   free(node->path);
 
   if ( node->parent ) {
@@ -136,22 +121,25 @@ unsigned int
 add_nodes (dir_node* root, dir_node* slot) {
   struct dirent* ent;
   unsigned int sum = 0;
-  while ( (ent = readdir(root->dir_ptr)) ) {
+  char * root_path = root->path;
+  DIR* root_dirp = opendir(root->path);
+  dir_node r = *root;
+  assert(root_dirp);
+
+  while ( (ent = readdir(root_dirp)) ) {
     assert(ent);
     if ( ent->d_type == DT_DIR  ) {
-      dir_node* node;
-      node = create_dir_node(ent, root, slot);
-      assert(node);
-      int fd = dirfd(node->dir_ptr);
-
-      sum++;
-      cbt_insert(&cbt, node->path, &fd);
-      z_dir(slot[fd].path, "dir add");
-      sum += add_nodes(node, slot);
+      if ( strcmp(ent->d_name, ".") != 0 &&
+           strcmp(ent->d_name, "..") != 0) {
+        dir_node* node;
+        node = create_dir_node(ent->d_name, &r, slot);
+        assert(node);
+        sum += add_nodes(node, slot);
+      }
     } else {
       unsigned int namelen, p_namelen;
       char * d_name = ent->d_name;
-      char * p_name = root->path;
+      char * p_name = r.path;
       namelen = strlen(d_name);
       p_namelen = strlen(p_name);
       char* path = NULL;
@@ -159,12 +147,12 @@ add_nodes (dir_node* root, dir_node* slot) {
       assert(path);
       sprintf(path, "%s/%s", p_name, d_name);
       if ( !cbt_contains(&cbt, path)) {
-        int fd = open(path, O_NONBLOCK|O_RDONLY);
+        int fd = infy_add(path);
         if ( fd < 0 ) {
-           printf("%s open error %s\n", path, strerror(errno));
-           abort();
+          printf("%s open error %s\n", path, strerror(errno));
+          abort();
         }
-        ev_io_init(&dir_watcher[fd], file_cb, fd, EV_LIBUV_KQUEUE_HACK);
+        ev_io_init(&dir_watcher[fd], file_cb, fd, EV_READ);
         ev_io_start(loop, &dir_watcher[fd]);
         assert(empty_dir_node(&dir_cluster[fd]));
         memset(&dir_cluster[fd], 0, sizeof(dir_node));
@@ -176,6 +164,7 @@ add_nodes (dir_node* root, dir_node* slot) {
       }
     }
   }
+  closedir(root_dirp);
   return sum;
 }
 
@@ -185,7 +174,7 @@ add_root_node ( char* path, dir_node* slot ) {
   dir_node* root_node;
   root_node = create_root_dir_node(path, dir_cluster);
   assert(root_node);
-  int root_fd = dirfd(root_node->dir_ptr);
+  int root_fd = infy_add(root_node->path);
   cbt_insert(&cbt, root_node->path, &root_fd);
   z_dir(path, "dir add");
   return add_nodes(root_node, slot);
@@ -199,8 +188,8 @@ insert_nodes ( dir_node* root,     /* root of tree to be inserted*/
   assert(!empty_dir_node(root));
   assert(parent);
 
-  DIR* root_dirp = root->dir_ptr;
-  int root_fd = dirfd(root_dirp);
+
+  int root_fd = infy_add(root->path);
   root->parent = parent;
   sum++;
   cbt_insert(&cbt, root->path, &root_fd);
@@ -218,10 +207,6 @@ remove_nodes_cb ( const char *elem, void* value, void *arg ) {
   int fd  = *(int*)value;
   dir_node* p = &dir_cluster[fd];
 
-  if ( p->dir_ptr == NULL ) {
-    /* do not handle file watcher */
-    return 0;
-  }
   ev_io_stop(loop, &dir_watcher[fd]);
   z_dir((char*)elem, "dir remove");
   if ( !empty_dir_node(&dir_cluster[fd]) ) {
@@ -255,16 +240,6 @@ remove_node ( dir_node* p ) {
     clean_dir_node(p);    
   }
   return 1;
-}
-
-void
-dir_node_rewind ( dir_node* node ) {
-  if ( !empty_dir_node(node) ) {
-    DIR* dirp = node->dir_ptr;
-    assert(dirp);
-    assert(node->loc != 0);
-    seekdir(dirp, node->loc);
-  }
 }
 
 static int total_dir_watcher = 0;

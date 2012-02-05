@@ -1,7 +1,6 @@
 #ifndef CBT_H_
 #define CBT_H_
 
-#define _POSIX_C_SOURCE 200112
 #define uint8 uint8_t
 #define uint32 uint32_t
 

@@ -8,7 +8,9 @@
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <fcntl.h>
 #include <sys/param.h>
+#include <sys/inotify.h>
 #include <dirent.h>
 #include <errno.h>
 #include <time.h>
@@ -46,101 +48,20 @@ z_dir ( char* path, char* sub) {
 }
 
 int
-later_than(time_t time1, struct timespec time2)
+later_than(time_t time1, time_t time2)
 {
-  if (time1 < time2.tv_sec)
+  if (time1 < time2)
     return 1 ;
-  else if (time1 > time2.tv_sec)
+  else if (time1 > time2)
     return 0 ;
   else
     return 1 ;
 }
 
+# define EV_INOTIFY_BUFSIZE (sizeof (struct inotify_event) * 2 + NAME_MAX)
+
 void file_cb (EV_P_ ev_io *w, int revents);
 
-int
-readdir_cb (eio_req *req)
-{
-  if (EIO_RESULT (req) < 0) {
-    struct stat st;
-    int ret = lstat(req->ptr1, &st);
-    if (ret && errno == ENOENT) {
-      int fd = *((int*)req->data);
-      free(req->data);
-      evented_fd = NULL;
-      remove_nodes(&dir_cluster[fd]);
-    }
-    return 0;
-  }
-
-  int fd = *((int*)req->data);
-  free(req->data);
-  evented_fd = NULL;
-
-  char* req_data;
-  req_data = dir_cluster[fd].path;
-  
-  struct eio_dirent *ents = (struct eio_dirent *)req->ptr1;
-  
-  if ( ents->type != EIO_DT_DIR ) {
-    struct stat leaf_st ;
-    lstat(req_data, &leaf_st);
-    if (!later_than(now, leaf_st.st_ctimespec)) {
-      printf("req_data: %s\n",req_data);
-      return 0;
-    }
-  }
-  
-  char *names = (char *)req->ptr2;
-  
-  int i;
-  for (i = 0; i < req->result; ++i)
-    {
-      struct eio_dirent *ent = ents + i;
-      char *name = names + ent->nameofs;
-
-      snprintf(pwd, MAXPATHLEN, "%s/%s", req_data, name);
-
-      if ( ent->type ==  EIO_DT_DIR) {
-        dir_node *father = &dir_cluster[fd];
-        dir_node *son;
-        DIR* father_dirp = father->dir_ptr;
-        dir_node_rewind(father);
-        struct dirent* son_ent = NULL;
-        while ((son_ent = readdir(father_dirp)))  {
-          if ( son_ent->d_type == DT_DIR &&
-               strcmp(son_ent->d_name, name) == 0
-               ) {
-            break;
-          } else {
-            son_ent = NULL;
-          }
-        }
-        if ( son_ent == NULL ) {
-          printf("can not find %s in %s\n", name, father->path);
-        }
-
-        if ( !cbt_contains(&cbt, pwd) ) {
-          assert(son_ent);
-          son = create_dir_node(son_ent, father, dir_cluster);
-          assert(son);
-          insert_nodes(son, father, dir_cluster);
-        }
-      } else {
-        if (!cbt_contains(&cbt, pwd)) {
-          int fd = open(pwd, O_NONBLOCK|O_RDONLY);
-          ev_io_init(&dir_watcher[fd], file_cb, fd, EV_LIBUV_KQUEUE_HACK);
-          ev_io_start(loop, &dir_watcher[fd]);
-          assert(empty_dir_node(&dir_cluster[fd]));
-          memset(&dir_cluster[fd], 0, sizeof(dir_node));
-          dir_cluster[fd].path = strdup(pwd);
-          cbt_insert(&cbt, pwd, &fd);
-          z_dir(pwd, "file add");
-        }
-      }
-    }
-  return 0;
-}
 
 static void
 timeout_cb (EV_P_ ev_timer *w, int revents)
@@ -151,6 +72,7 @@ timeout_cb (EV_P_ ev_timer *w, int revents)
 static void
 suicide_cb (EV_P_ ev_timer *w, int revents)
 {
+  printf("suicide: %s\n","!");
   ev_break (EV_A_ EVBREAK_ONE);
 }
 
@@ -203,49 +125,107 @@ cmd_cb (struct ev_loop *loop, ev_io *w, int revents)
 void
 file_cb (EV_P_ ev_io *w, int revents)
 {
-  assert(revents == EV_LIBUV_KQUEUE_HACK);
-  time(&now);
-  char * path = dir_cluster[w->fd].path;
-  printf("\nFILE_EVENT[%d]: %s\n", w->fd, path);
-  struct stat st;
-  int ret = stat(path, &st);
+  printf("FILE_EVENT [%d]: \n", w->fd);
+  char buf [EV_INOTIFY_BUFSIZE];
+  int ofs;
+  int len = read (w->fd, buf, sizeof (buf));
 
-  if ( ret < 0 ) {
-    z_dir(path, "file delete");
-    close(w->fd);
-    ev_io_stop(loop, w);
-    cbt_delete(&cbt, path);
-    free(dir_cluster[w->fd].path);
-    memset(&dir_cluster[w->fd], 0, sizeof(dir_node));
-  } else {
-    if (!cbt_contains(&cbt,  path)) {
-      int fd = w->fd;
-      cbt_insert(&cbt, path, &fd);
-      z_dir(path, "file change");
-    } else {
-      struct stat st;
-      fstat(w->fd, &st);
-      if (later_than(now, st.st_mtimespec)) {
-        z_dir(path, "file change");         
-      }
+  for (ofs = 0; ofs < len; )
+    {
+      struct inotify_event *ev = (struct inotify_event *)(buf + ofs);
+
+      switch ( ev->mask )
+        {
+        case IN_ATTRIB:
+          printf("event: %s, %s\n","IN_ATTRIB", ev->len ? ev->name : "none");
+        case IN_DELETE_SELF:
+          printf("event: %s, %s\n","IN_DELETE_SELF", ev->len ? ev->name : "none");
+          break;
+        case IN_CLOSE_WRITE:
+        case IN_CLOSE_NOWRITE:
+          printf("event: %s, %s\n","IN_CLOSE", ev->len ? ev->name : "none");
+          break;
+        default:
+          printf("event: %d, %s cookie[%d]\n",ev->mask, ev->len ? ev->name : "none", ev->cookie);
+        }
+      ofs += sizeof (struct inotify_event) + ev->len;
     }
-  }
 }
 
 void
 dir_cb (EV_P_ ev_io *w, int revents)
 {
-  assert(revents == EV_LIBUV_KQUEUE_HACK);
+  char buf [EV_INOTIFY_BUFSIZE];
+  int ofs;
+  int len = read (w->fd, buf, sizeof (buf));
 
-  time(&now);
-  printf("\nEVENT[%d]: %s\n", w->fd, dir_cluster[w->fd].path);
-  evented_fd = malloc(sizeof(int));
-  *evented_fd = w->fd;
-  eio_readdir(dir_cluster[w->fd].path,
-              EIO_READDIR_DENTS|EIO_READDIR_DIRS_FIRST,
-              0,
-              readdir_cb,
-              evented_fd);
+  int fd = w->fd;
+  char *path = dir_cluster[fd].path;
+
+  for (ofs = 0; ofs < len; )
+    {
+      struct inotify_event *ev = (struct inotify_event *)(buf + ofs);
+      if ( ev->len ) {
+        snprintf(pwd, MAXPATHLEN, "%s/%s", path, ev->name);        
+      }
+
+      switch ( ev->mask )
+        {
+        case IN_ATTRIB:
+          printf("direvent file attr: %s\n", ev->len ? pwd : "none");
+        case IN_CREATE:
+          printf("direvent file add: %s\n",ev->len ? pwd : "none");
+          break;
+        case IN_MODIFY:
+          printf("direvent file change: %s\n",ev->len ? pwd : "none");
+          break;
+        case IN_DELETE:
+          printf("direvent file delete: %s\n",ev->len ? pwd : "none");
+          break;
+        case IN_DELETE_SELF:
+          printf("direvent dir remove: %s\n",dir_cluster[fd].path);
+          break;
+        case IN_MOVED_FROM:
+          printf("direvent file mv from: %s\n",ev->len ? pwd : "none");
+          break;
+        case IN_MOVED_TO:
+          printf("direvent file mv to: %s\n",ev->len ? pwd : "none");
+          break;
+        case IN_CLOSE_WRITE:
+        case IN_CLOSE_NOWRITE:
+          printf("direvent file close: %s\n",ev->len ? pwd : "none");
+          break;
+        default:
+          if ( ev->len ) {
+            struct stat st;
+            int ret = stat(pwd, &st);
+            if ( ret != -1 ) {
+              if ( S_ISDIR(st.st_mode)) {
+                dir_node *father = &dir_cluster[fd];
+                dir_node *son;
+                if ( !cbt_contains(&cbt, pwd) ) {
+                  son = create_dir_node(ev->name, father, dir_cluster);
+                  assert(son);
+                  insert_nodes(son, father, dir_cluster);
+                }
+              } else {
+                if (!cbt_contains(&cbt, pwd)) {
+                  int fd = infy_add(pwd);
+                  ev_io_init(&dir_watcher[fd], file_cb, fd, EV_READ);
+                  ev_io_start(loop, &dir_watcher[fd]);
+                  assert(empty_dir_node(&dir_cluster[fd]));
+                  memset(&dir_cluster[fd], 0, sizeof(dir_node));
+                  dir_cluster[fd].path = strdup(pwd);
+                  cbt_insert(&cbt, pwd, &fd);
+                  z_dir(pwd, "file add");
+                }
+              }
+              
+            }
+          }
+        }
+      ofs += sizeof (struct inotify_event) + ev->len;
+    }
 }
 
 int
@@ -262,7 +242,7 @@ main (int argc, char**argv)
   /* map fd : path */
   memset(dir_cluster, 0, sizeof(dir_cluster));
 
-  loop = ev_loop_new (EVBACKEND_KQUEUE);
+  loop = ev_loop_new (EVBACKEND_EPOLL);
 
   if ( argv[2] ) {
     int seconds = atoi(argv[2]);
@@ -280,6 +260,7 @@ main (int argc, char**argv)
   strcpy(root_dir_arg, argv[1]);
   add_root_node(argv[1], dir_cluster);
   
+ 
   ev_idle_init (&repeat_watcher, repeat);
 
   ev_async_init (&ready_watcher, ready);

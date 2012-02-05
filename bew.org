@@ -201,4 +201,10 @@
         - configure system
   - [ ] linux port
         - try inotify interface
+        - 0mq dependency
+          - uuid-dev
+            linux-util src and build libuuid
+          - do not use package libtool, use system libtool
+          - need link pthread uuid rt
+            result is about 2M!
   - [ ] st time works with version file system ?

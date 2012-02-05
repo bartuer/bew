@@ -16,7 +16,7 @@ SYNTAX_CHECK_FLAG=--analyze -fno-caret-diagnostics -fno-color-diagnostics -fno-s
 test:evio
 	rm -Rf /tmp/a/*
 	./evio /tmp/a &
-	sh ./regress_fixture
+	bash ./regress_fixture
 	@echo #./evio /tmp/a < regress_fixture
 
 evio_memcheck:evio
@@ -25,7 +25,7 @@ evio_memcheck:evio
 	sh ./regress_fixture
 
 evio:evio.o dir_node.o cbt.o
-	$(CXX) -O3 -o evio evio.o dir_node.o cbt.o $(LIBEIO) $(LIBEV) $(LIBZMQ) $(LIBCZMQ)
+	$(CXX) -O3 -o evio evio.o dir_node.o cbt.o $(LIBEIO) $(LIBEV) $(LIBZMQ) $(LIBCZMQ) -luuid -lrt -lpthread
 
 evio.o:evio.c $(LIBEV) 
 	$(CC) -I$(LIBEIOPATH) -I$(LIBEVPATH) $(LIBZMQINC) -c evio.c 
@@ -34,7 +34,7 @@ evio.o:evio.c $(LIBEV)
 	mkdir /tmp/evio
 
 $(LIBEV):$(LIBEVPATH)/ev_kqueue.c $(LIBEVPATH)/ev.c $(LIBEVPATH)/ev_select.c
-	cd /Users/bartuer/local/src/bew/lib/libev; make
+	cd /home/bartuer/local/src/bew/lib/libev; make
 
 evsub_memcheck:evsub
 	valgrind --leak-check=yes ./evsub tcp://localhost:5556 10001 
