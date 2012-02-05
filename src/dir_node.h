@@ -41,9 +41,7 @@ unsigned int add_root_node ( char* path,
 unsigned int add_nodes (dir_node* root,
                         dir_node* slot);
 unsigned int remove_nodes ( dir_node* root);
-unsigned int remove_node ( dir_node* p);
 int check_cbt(const char* path);
 
 extern void dir_cb (EV_P_ ev_io *w, int revents);
-extern void file_cb (EV_P_ ev_io *w, int revents);
 extern void z_dir ( char* path, char* sub);

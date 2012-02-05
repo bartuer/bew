@@ -11,7 +11,7 @@ LIBCZMQ=$(LIBCZMQPATH)/src/.libs/libczmq.a
 
 CC=gcc
 CXX=g++
-SYNTAX_CHECK_FLAG=--analyze -fno-caret-diagnostics -fno-color-diagnostics -fno-show-column
+SYNTAX_CHECK_FLAG=-c -I. $(LIBZMQINC) -I$(LIBEIOPATH) -I$(LIBEVPATH)
 
 test:evio
 	rm -Rf /tmp/a/*
@@ -52,7 +52,7 @@ cbt.o:cbt.c
 	$(CC) -c -O3 -o cbt.o cbt.c
 
 check-syntax:
-	$(CC) $(SYNTAX_CHECK_FLAG) -I. $(LIBZMQINC) -I$(LIBEIO) -I$(LIBEVPATH) $(CHK_SOURCES)
+	$(CC) $(SYNTAX_CHECK_FLAG)  $(CHK_SOURCES)
 
 clean:
 	rm *.o

@@ -164,18 +164,19 @@
         (link "~/local/src/bew/src/evio.c" 3099)
         - rename
         - move
-* TODO portable fix [3/4]
+* TODO portable fix [5/6]
   SCHEDULED: <2012-02-01 Wed 06:30>
-  CLOCK: [2012-02-01 Wed 07:28]--[2012-02-01 Wed 10:18] =>  2:50
+  CLOCK: [2012-02-05 Sun 07:26]--[2012-02-05 Sun 09:23] =>  1:57
   :PROPERTIES:
   :Effort:   1:30
-  :Clockhistory: 4
+  :Clockhistory: 5
   | :Clock1: | [2012-02-01 Wed 06:32]--[2012-02-01 Wed 07:17] =>  0:45 | fd limit          |   45 |
   | :Clock2: | [2012-02-01 Wed 07:35]--[2012-02-01 Wed 07:42] =>  0:07 | code mv           |    7 |
   | :Clock3: | [2012-02-01 Wed 09:30]--[2012-02-01 Wed 10:15] =>  0:45 | src               |   45 |
   | :Clock4: | [2012-02-01 Wed 07:28]--[2012-02-01 Wed 10:18] =>  2:50 | inotify interface |  170 |
-  |          |                                                         |                   | 4.45 |
-  #+TBLFM: $4='(convert-time-to-minutes $2)::@5$4=vsum(@1..@4)/60;%.2f
+  | :Clock5: | [2012-02-05 Sun 07:26]--[2012-02-05 Sun 09:23] =>  1:57 | inotify fix       |  117 |
+  |          |                                                         |                   | 6.40 |
+  #+TBLFM: $4='(convert-time-to-minutes $2)::@6$4=vsum(@1..@5)/60;%.2f
   :Commit:   (git-link "~/local/src/bew" "86b8a8dea81ba0ddda41f019701dd3a436ba5371")
   :END:
   - [X] possible watcher network folder, but slow
@@ -200,7 +201,7 @@
         - branch on OS of ev
         - compiler
         - configure system
-  - [ ] linux port
+  - [X] linux port
         - try inotify interface
         - 0mq dependency
           - uuid-dev
@@ -208,4 +209,11 @@
           - do not use package libtool, use system libtool
           - need link pthread uuid rt
             result is about 2M!
+  - [X] linux fix
+        - dir move
+        - repeat report
+        - remove remove_node
+        - remove insert_nodes
+        - remove dir move logic
+        - remove file_cb
   - [ ] st time works with version file system ?

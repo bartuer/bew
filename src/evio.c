@@ -115,41 +115,11 @@ cmd_cb (struct ev_loop *loop, ev_io *w, int revents)
   pthread_create(&t, NULL, (void *)system, (void *)line);
   pthread_detach(t);
   /*
-     now in test mode, suicide after 15 seconds
+    now in test mode, suicide after 15 seconds
   */
   ev_timer_init (&suicide_watcher, suicide_cb, 15, 0.);
   ev_timer_start (loop, &suicide_watcher);
   ev_io_stop (loop, w);
-}
-
-void
-file_cb (EV_P_ ev_io *w, int revents)
-{
-  printf("FILE_EVENT [%d]: \n", w->fd);
-  char buf [EV_INOTIFY_BUFSIZE];
-  int ofs;
-  int len = read (w->fd, buf, sizeof (buf));
-
-  for (ofs = 0; ofs < len; )
-    {
-      struct inotify_event *ev = (struct inotify_event *)(buf + ofs);
-
-      switch ( ev->mask )
-        {
-        case IN_ATTRIB:
-          printf("event: %s, %s\n","IN_ATTRIB", ev->len ? ev->name : "none");
-        case IN_DELETE_SELF:
-          printf("event: %s, %s\n","IN_DELETE_SELF", ev->len ? ev->name : "none");
-          break;
-        case IN_CLOSE_WRITE:
-        case IN_CLOSE_NOWRITE:
-          printf("event: %s, %s\n","IN_CLOSE", ev->len ? ev->name : "none");
-          break;
-        default:
-          printf("event: %d, %s cookie[%d]\n",ev->mask, ev->len ? ev->name : "none", ev->cookie);
-        }
-      ofs += sizeof (struct inotify_event) + ev->len;
-    }
 }
 
 void
@@ -166,6 +136,7 @@ dir_cb (EV_P_ ev_io *w, int revents)
     {
       struct inotify_event *ev = (struct inotify_event *)(buf + ofs);
       if ( ev->len ) {
+        memset(pwd, 0, sizeof(MAXPATHLEN));
         snprintf(pwd, MAXPATHLEN, "%s/%s", path, ev->name);        
       }
 
@@ -173,7 +144,7 @@ dir_cb (EV_P_ ev_io *w, int revents)
         {
         case IN_ATTRIB:
           break;
-       case IN_CREATE:
+        case IN_CREATE:
           printf("direvent file add: %s\n",ev->len ? pwd : "none");
           break;
         case IN_MODIFY:
@@ -183,7 +154,8 @@ dir_cb (EV_P_ ev_io *w, int revents)
           printf("direvent file delete: %s\n",ev->len ? pwd : "none");
           break;
         case IN_DELETE_SELF:
-          printf("direvent dir remove: %s\n",dir_cluster[fd].path);
+        case IN_MOVE_SELF:
+          remove_nodes(&dir_cluster[fd]);
           break;
         case IN_MOVED_FROM:
           printf("direvent file mv from: %s\n",ev->len ? pwd : "none");
@@ -201,26 +173,14 @@ dir_cb (EV_P_ ev_io *w, int revents)
             int ret = stat(pwd, &st);
             if ( ret != -1 ) {
               if ( S_ISDIR(st.st_mode)) {
-                 if ( !cbt_contains(&cbt, pwd) ) {
-                   dir_node *father = &dir_cluster[fd];
-                   dir_node* root = create_dir_node(ev->name, father, dir_cluster);
-                   assert(root);
-                   add_nodes(root, dir_cluster);
-                }
-              } else {
-                if (!cbt_contains(&cbt, pwd)) {
-                  int fd = infy_add(pwd);
-                  ev_io_init(&dir_watcher[fd], file_cb, fd, EV_READ);
-                  ev_io_start(loop, &dir_watcher[fd]);
-                  assert(empty_dir_node(&dir_cluster[fd]));
-                  memset(&dir_cluster[fd], 0, sizeof(dir_node));
-                  dir_cluster[fd].path = strdup(pwd);
-                  cbt_insert(&cbt, pwd, &fd);
-                  z_dir(pwd, "file add");
+                if ( !cbt_contains(&cbt, pwd) ) {
+                  dir_node *father = &dir_cluster[fd];
+                  assert(!empty_dir_node(father));
+                  dir_node* root = create_dir_node(ev->name, father, dir_cluster);
+                  assert(root);
+                  add_nodes(root, dir_cluster);
                 }
               }
-            } else {
-              printf("direvent dir @ remove: %s\n",pwd);
             }
           }
         }

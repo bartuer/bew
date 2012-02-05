@@ -136,32 +136,6 @@ add_nodes (dir_node* root, dir_node* slot) {
         assert(node);
         sum += add_nodes(node, slot);
       }
-    } else {
-      unsigned int namelen, p_namelen;
-      char * d_name = ent->d_name;
-      char * p_name = r.path;
-      namelen = strlen(d_name);
-      p_namelen = strlen(p_name);
-      char* path = NULL;
-      path = malloc(namelen + p_namelen + 2);
-      assert(path);
-      sprintf(path, "%s/%s", p_name, d_name);
-      if ( !cbt_contains(&cbt, path)) {
-        int fd = infy_add(path);
-        if ( fd < 0 ) {
-          printf("%s open error %s\n", path, strerror(errno));
-          abort();
-        }
-        ev_io_init(&dir_watcher[fd], file_cb, fd, EV_READ);
-        ev_io_start(loop, &dir_watcher[fd]);
-        assert(empty_dir_node(&dir_cluster[fd]));
-        memset(&dir_cluster[fd], 0, sizeof(dir_node));
-        dir_cluster[fd].path = path;
-        cbt_insert(&cbt, path, &fd);
-        z_dir(path, "file add");
-      } else {
-        free(path);
-      }
     }
   }
   closedir(root_dirp);
@@ -206,22 +180,6 @@ remove_nodes ( dir_node* root) {
   }
 
   return sum;
-}
-
-unsigned int
-remove_node ( dir_node* p ) {
-  if ( !empty_dir_node(p) ) {
-    int fd = p - &dir_cluster[0];
-    assert(p == &dir_cluster[fd]);
-    ev_io_stop(loop, &dir_watcher[fd]);
-    /*
-      it is posssible subdir node remove before parent:
-      if subdir remove event arrive before parent dir remove event
-    */
-    z_dir(p->path, "dir remove");
-    clean_dir_node(p);    
-  }
-  return 1;
 }
 
 static int total_dir_watcher = 0;
