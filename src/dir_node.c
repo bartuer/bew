@@ -100,7 +100,7 @@ void dump_dir_node(dir_node* node) {
     printf(" cleaned node; \n");
   } else {
     size_t path_len = strlen(node->path);
-    printf("\nnode->path[%lu]: %s\n", path_len, node->path);
+    printf("\nnode->path[%d]: %s\n", path_len, node->path);
   }
 }
 

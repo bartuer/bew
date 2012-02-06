@@ -54,8 +54,9 @@ subscriber_cb (zloop_t *loop, zmq_pollitem_t *item, void *arg) {
 
     } else {                    /* parent */
       close(pipes[0]);          /* close read end */
-      write(pipes[1], zmq_msg_data(&message), size);
-      write(pipes[1], "\n", 1);
+      int ret1 = write(pipes[1], zmq_msg_data(&message), size);
+      int ret2 = write(pipes[1], "\n", 1);
+      assert(ret1 != -1 && ret2 != -1);
       close(pipes[1]);          /* after send message to child, close write end */
 
       int status;
@@ -68,8 +69,9 @@ subscriber_cb (zloop_t *loop, zmq_pollitem_t *item, void *arg) {
     }
 
   } else {
-    write(1, zmq_msg_data(&message), size);
-    write(1, "\n", 1);
+    int ret1 = write(1, zmq_msg_data(&message), size);
+    int ret2 = write(1, "\n", 1);
+    assert(ret1 != -1 && ret2 != -1);
   }
   zmq_msg_close (&message);
 

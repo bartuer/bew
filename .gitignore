@@ -155,3 +155,4 @@ lib/zeromq/perf/.libs
 /doc/reference/sample/inotify
 /src/dir_node_flymake.o
 /src/evio_flymake.o
+/src/evsub_flymake.o
