@@ -47,21 +47,7 @@ z_dir ( char* path, char* sub) {
   zstr_send(publisher, update);
 }
 
-int
-later_than(time_t time1, time_t time2)
-{
-  if (time1 < time2)
-    return 1 ;
-  else if (time1 > time2)
-    return 0 ;
-  else
-    return 1 ;
-}
-
 # define EV_INOTIFY_BUFSIZE (sizeof (struct inotify_event) * 2 + NAME_MAX)
-
-void file_cb (EV_P_ ev_io *w, int revents);
-
 
 static void
 timeout_cb (EV_P_ ev_timer *w, int revents)
