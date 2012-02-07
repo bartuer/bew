@@ -94,9 +94,21 @@ int main (int argc, char *argv []) {
   assert (loop);
   zloop_set_verbose (loop, verbose);
 
+  if ( argv[2] ) {
+    pid_t p = getpid();
+    int fd = open(argv[2], O_WRONLY|O_CREAT, S_IRUSR|S_IWUSR|S_IRGRP|S_IXOTH);
+    assert(fd != -1);
+    char pid[16];
+    sprintf(pid, "%d", p);
+    int l = write(fd, pid, strlen(pid));
+    assert(l > 0);
+    printf("pid: %s\n",pid);
+    close(fd);
+  }
+
   zmq_pollitem_t sub_event = { subscriber, 0, ZMQ_POLLIN };
-  if ( argc > 3 ) {
-    assert(zloop_poller (loop, &sub_event, subscriber_cb, (void*)(argv + 3)) == 0);    
+  if ( argc > 4 ) {
+    assert(zloop_poller (loop, &sub_event, subscriber_cb, (void*)(argv + 4)) == 0);    
   } else {
     assert(zloop_poller (loop, &sub_event, subscriber_cb, NULL) == 0);    
   }
