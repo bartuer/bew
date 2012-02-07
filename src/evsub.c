@@ -94,9 +94,9 @@ int main (int argc, char *argv []) {
   assert (loop);
   zloop_set_verbose (loop, verbose);
 
-  if ( argv[2] ) {
+  if ( argv[3] ) {
     pid_t p = getpid();
-    int fd = open(argv[2], O_WRONLY|O_CREAT, S_IRUSR|S_IWUSR|S_IRGRP|S_IXOTH);
+    int fd = open(argv[3], O_WRONLY|O_CREAT, S_IRUSR|S_IWUSR|S_IRGRP|S_IXOTH);
     assert(fd != -1);
     char pid[16];
     sprintf(pid, "%d", p);
