@@ -197,8 +197,8 @@ main (int argc, char**argv)
     ev_timer_start (loop, &suicide_watcher);
   }
   
-  ev_io_init (&cmd_watcher, cmd_cb, 0, EV_READ);
-  ev_io_start (loop, &cmd_watcher);
+  /* ev_io_init (&cmd_watcher, cmd_cb, 0, EV_READ); */
+  /* ev_io_start (loop, &cmd_watcher); */
 
   /* ev_timer_init (&timeout_watcher, timeout_cb, 1, 1.); */
   /* ev_timer_start (loop, &timeout_watcher); */
