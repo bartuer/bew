@@ -191,10 +191,15 @@ main (int argc, char**argv)
   loop = ev_loop_new (EVBACKEND_EPOLL);
 
   if ( argv[2] ) {
-    int seconds = atoi(argv[2]);
-    assert(seconds > 1);
-    ev_timer_init (&suicide_watcher, suicide_cb, seconds, 0.);
-    ev_timer_start (loop, &suicide_watcher);
+    pid_t p = getpid();
+    int fd = open(argv[2], O_WRONLY|O_CREAT, S_IRUSR|S_IWUSR|S_IRGRP|S_IXOTH);
+    assert(fd != -1);
+    char pid[16];
+    sprintf(pid, "%d", p);
+    int l = write(fd, pid, strlen(pid));
+    assert(l > 0);
+    printf("pid: %s\n",pid);
+    close(fd);
   }
   
   /* ev_io_init (&cmd_watcher, cmd_cb, 0, EV_READ); */
