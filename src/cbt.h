@@ -21,4 +21,4 @@ void cbt_clear(cbt_tree *t);
 int cbt_allprefixed(cbt_tree *t, const char *prefix,
                     int (*handle) (const char *, void *, void *), void *arg);
 
-#endif  // CBT_H_
+#endif

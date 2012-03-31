@@ -218,7 +218,7 @@ cbt_allprefixed(cbt_tree *t, const char *prefix,
   }
 
   size_t i;
-  for (i = 0; i < ulen; ++i) {                                      /* Check prefix */
+  for (i = 0; i < ulen; ++i) {                                             /* Check prefix */
     if (p[i] != ubytes[i]) return 1;
   }
 

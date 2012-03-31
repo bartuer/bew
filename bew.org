@@ -164,9 +164,8 @@
         (link "~/local/src/bew/src/evio.c" 3099)
         - rename
         - move
-* TODO portable fix [7/8]
+* DONE portable fix [7/8]
   SCHEDULED: <2012-02-01 Wed 06:30>
-  CLOCK: [2012-02-05 Sun 10:20]
   :PROPERTIES:
   :Effort:   1:30
   :Clockhistory: 6
